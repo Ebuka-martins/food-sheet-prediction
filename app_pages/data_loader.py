@@ -4,7 +4,27 @@ import os
 
 def load_and_preprocess_data(file_path="data/food_balance_sheet_europe.csv"):
     """
-    Load and preprocess the Food Balance Sheet dataset
+    Loads a CSV file and performs basic preprocessing.
+
+    Args:
+        filepath (str or Path): Path to the CSV file.
+
+    Returns:
+        pd.DataFrame: Cleaned DataFrame.
+    """
+    # Load the data
+    df = pd.read_csv(file_path)
+
+    # Example preprocessing (adjust as needed)
+    df.dropna(how='all', axis=1, inplace=True)  
+    df.dropna(how='all', axis=0, inplace=True)  
+    df.columns = df.columns.str.strip()         
+
+    return df
+
+def load_and_preprocess_data_advanced(file_path="data/food_balance_sheet_europe.csv"):
+    """
+    Load and preprocess the Food Balance Sheet dataset (advanced version)
     
     Parameters:
     -----------
