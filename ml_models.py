@@ -1,5 +1,8 @@
 import pandas as pd
 import numpy as np
+import os
+import joblib
+import logging
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
@@ -7,8 +10,6 @@ from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LinearRegression, Ridge, Lasso
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-import joblib
-import os
 
 try:
     import xgboost as xgb
@@ -17,42 +18,36 @@ except ImportError:
     XGBOOST_AVAILABLE = False
     print("XGBoost not available. Install with 'pip install xgboost' to use XGBoost models.")
 
+# Logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
+
+def save_model(model, filepath="models/best_model.joblib"):
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    joblib.dump(model, filepath)
+    logging.info(f"Model saved to {filepath}")
+
+
+def load_model(filepath="models/best_model.joblib"):
+    if os.path.exists(filepath):
+        logging.info(f"Model loaded from {filepath}")
+        return joblib.load(filepath)
+    else:
+        logging.warning(f"Model file not found at {filepath}")
+        return None
+
+
 def prepare_data_for_modeling(df, features, target, test_size=0.2, random_state=42):
-    """
-    Prepare data for modeling by splitting into train and test sets
-    
-    Parameters:
-    -----------
-    df : pd.DataFrame
-        Input dataframe
-    features : list
-        List of feature columns
-    target : str
-        Target column
-    test_size : float
-        Test set proportion
-    random_state : int
-        Random state for reproducibility
-        
-    Returns:
-    --------
-    tuple
-        X_train, X_test, y_train, y_test, preprocessor
-    """
-    # Check if all features and target exist in the dataframe
     for col in features + [target]:
         if col not in df.columns:
             raise ValueError(f"Column {col} not found in the dataframe")
-    
-    # Extract features and target
+
     X = df[features].copy()
     y = df[target].copy()
-    
-    # Identify numeric and categorical features
+
     numeric_features = X.select_dtypes(include=['int64', 'float64']).columns.tolist()
     categorical_features = X.select_dtypes(include=['object', 'category']).columns.tolist()
-    
-    # Create preprocessor
+
     preprocessor = ColumnTransformer(
         transformers=[
             ('num', StandardScaler(), numeric_features),
@@ -62,37 +57,21 @@ def prepare_data_for_modeling(df, features, target, test_size=0.2, random_state=
         ],
         remainder='passthrough'
     )
-    
-    # Split data
+
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)
-    
     return X_train, X_test, y_train, y_test, preprocessor
 
-def train_model(df, features, target, model_type='Linear Regression'):
-    """
-    Train a machine learning model
-    
-    Parameters:
-    -----------
-    df : pd.DataFrame
-        Input dataframe
-    features : list
-        List of feature columns
-    target : str
-        Target column
-    model_type : str
-        Type of model to train
-        
-    Returns:
-    --------
-    tuple
-        Trained model, performance metrics, and feature importance
-    """
+
+def train_model(df, features, target, model_type='Linear Regression', progress_callback=None):
     try:
-        # Prepare data
+        if progress_callback:
+            progress_callback(10)
+
         X_train, X_test, y_train, y_test, preprocessor = prepare_data_for_modeling(df, features, target)
-        
-        # Define model based on model_type
+
+        if progress_callback:
+            progress_callback(20)
+
         if model_type == 'Linear Regression':
             model = LinearRegression()
             param_grid = {}
@@ -121,59 +100,52 @@ def train_model(df, features, target, model_type='Linear Regression'):
                 raise ImportError("XGBoost is not available. Please install with 'pip install xgboost'")
         else:
             raise ValueError(f"Unsupported model type: {model_type}")
-        
-        # Create pipeline
+
+        if progress_callback:
+            progress_callback(30)
+
         pipeline = Pipeline([
             ('preprocessor', preprocessor),
             ('model', model)
         ])
-        
-        # Use grid search if param_grid is not empty
+
         if param_grid:
             grid_search = GridSearchCV(pipeline, param_grid, cv=3, scoring='neg_mean_squared_error')
             grid_search.fit(X_train, y_train)
             best_pipeline = grid_search.best_estimator_
+            logging.info(f"Best parameters for {model_type}: {grid_search.best_params_}")
         else:
             best_pipeline = pipeline
             best_pipeline.fit(X_train, y_train)
-        
-        # Make predictions
+
+        if progress_callback:
+            progress_callback(70)
+
         y_pred = best_pipeline.predict(X_test)
-        
-        # Calculate metrics
+
         metrics = {
             'r2': r2_score(y_test, y_pred),
             'mae': mean_absolute_error(y_test, y_pred),
             'rmse': np.sqrt(mean_squared_error(y_test, y_pred))
         }
-        
-        # Get feature importance if available
-        feature_importance = {}
-        
-        return best_pipeline, metrics, feature_importance
-    
+
+        logging.info(f"{model_type} model performance: R2={metrics['r2']:.3f}, MAE={metrics['mae']:.3f}, RMSE={metrics['rmse']:.3f}")
+
+        if progress_callback:
+            progress_callback(100)
+
+        return best_pipeline, metrics, {}
+
     except Exception as e:
-        print(f"Error training model: {e}")
+        logging.error(f"Error training model: {e}")
+        if progress_callback:
+            progress_callback(0)
         return None, {'r2': 0, 'mae': 0, 'rmse': 0}, {}
 
+
 def predict(model, X):
-    """
-    Make predictions using a trained model
-    
-    Parameters:
-    -----------
-    model : Pipeline
-        Trained scikit-learn pipeline
-    X : pd.DataFrame
-        Input features
-        
-    Returns:
-    --------
-    np.ndarray
-        Predictions
-    """
     try:
         return model.predict(X)
     except Exception as e:
-        print(f"Error making predictions: {e}")
+        logging.error(f"Error making predictions: {e}")
         return None

@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import io
 
 def perform_eda(df):
     """
@@ -17,12 +18,10 @@ def perform_eda(df):
     """
     results = {}
     
-    # Basic statistics
     results['row_count'] = len(df)
     results['column_count'] = len(df.columns)
     results['missing_values'] = df.isna().sum().to_dict()
     
-    # Get unique countries and items
     if 'Country' in df.columns:
         results['unique_countries'] = df['Country'].nunique()
         results['countries'] = sorted(df['Country'].unique().tolist())
@@ -35,6 +34,7 @@ def perform_eda(df):
         results['year_range'] = (df['Year'].min(), df['Year'].max())
     
     return results
+
 
 def get_key_insights(df):
     """
@@ -52,15 +52,12 @@ def get_key_insights(df):
     """
     insights = []
     
-    # Basic insights based on available columns
     if all(col in df.columns for col in ['Country', 'Production']):
-        # Top producing countries
         top_producers = df.groupby('Country')['Production'].sum().sort_values(ascending=False)
         if not top_producers.empty:
             insights.append(f"Top producing country is {top_producers.index[0]} with {top_producers.iloc[0]:,.0f} units")
     
     if all(col in df.columns for col in ['Year', 'Production']):
-        # Production trend
         yearly_production = df.groupby('Year')['Production'].sum()
         if len(yearly_production) > 1:
             first_year = yearly_production.index.min()
@@ -74,7 +71,6 @@ def get_key_insights(df):
                 insights.append(f"Production decreased by {abs(pct_change):.1f}% from {first_year} to {last_year}")
     
     if all(col in df.columns for col in ['Country', 'Import Quantity', 'Export Quantity']):
-        # Net exporters and importers
         df['Net_Trade'] = df['Export Quantity'] - df['Import Quantity']
         net_trade = df.groupby('Country')['Net_Trade'].sum().sort_values()
         
@@ -82,17 +78,16 @@ def get_key_insights(df):
             insights.append(f"Largest net importer: {net_trade.index[0]}")
             insights.append(f"Largest net exporter: {net_trade.index[-1]}")
     
-    # Add more insights if specific columns exist
     if 'Item' in df.columns and 'Production' in df.columns:
         top_items = df.groupby('Item')['Production'].sum().sort_values(ascending=False)
         if not top_items.empty:
             insights.append(f"Most produced item: {top_items.index[0]} ({top_items.iloc[0]:,.0f} units)")
     
-    # Add a default insight if none were generated
     if not insights:
         insights.append("Analyze the data further to discover more specific patterns")
     
     return insights
+
 
 def calculate_food_security_metrics(df):
     """
@@ -111,23 +106,16 @@ def calculate_food_security_metrics(df):
     if not all(col in df.columns for col in ['Country', 'Production', 'Import Quantity', 'Export Quantity']):
         return pd.DataFrame()
     
-    # Create a copy to avoid modifying the original
     result_df = df.copy()
     
-    # Calculate food availability
     if 'Food' in result_df.columns:
-        # Total food availability
         result_df['Food_Availability'] = result_df['Production'] + result_df['Import Quantity'] - result_df['Export Quantity']
-        
-        # Food self-sufficiency ratio
         result_df['Self_Sufficiency_Ratio'] = result_df['Production'] / result_df['Food']
-        result_df['Self_Sufficiency_Ratio'] = result_df['Self_Sufficiency_Ratio'].replace([np.inf, -np.inf], np.nan)
-        
-        # Import dependency ratio
         result_df['Import_Dependency_Ratio'] = result_df['Import Quantity'] / result_df['Food']
-        result_df['Import_Dependency_Ratio'] = result_df['Import_Dependency_Ratio'].replace([np.inf, -np.inf], np.nan)
+        
+        for col in ['Self_Sufficiency_Ratio', 'Import_Dependency_Ratio']:
+            result_df[col] = result_df[col].replace([np.inf, -np.inf], np.nan)
     
-    # Group by country to get country-level metrics
     if 'Country' in result_df.columns:
         metrics = ['Food_Availability', 'Self_Sufficiency_Ratio', 'Import_Dependency_Ratio']
         available_metrics = [m for m in metrics if m in result_df.columns]
@@ -137,3 +125,27 @@ def calculate_food_security_metrics(df):
             return country_metrics
     
     return pd.DataFrame()
+
+
+def get_summary_statistics(df):
+    """
+    Generate summary statistics including df.describe() and df.info()
+    
+    Parameters:
+    -----------
+    df : pd.DataFrame
+        Input dataframe
+        
+    Returns:
+    --------
+    dict
+        Dictionary with 'describe' and 'info' summaries
+    """
+    buffer = io.StringIO()
+    df.info(buf=buffer)
+    info_str = buffer.getvalue()
+    
+    return {
+        'describe': df.describe(include='all').to_dict(),
+        'info': info_str
+    }

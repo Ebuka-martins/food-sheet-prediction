@@ -3,10 +3,16 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+
 from data_loader import load_and_preprocess_data
 from data_analysis import perform_eda, get_key_insights
 from ml_models import train_model, predict
-from visualizations import plot_distributions, plot_time_series, plot_comparisons
+from visualizations import (
+    plot_distributions,
+    plot_time_series,
+    plot_comparisons,
+    plot_forecast
+)
 
 # Page configuration
 st.set_page_config(
@@ -30,138 +36,152 @@ def load_data():
 
 data = load_data()
 
-# Sidebar for navigation and options
+# Sidebar navigation
 st.sidebar.title("Navigation")
-page = st.sidebar.radio("Go to", ["Data Overview", "Data Analysis", "Machine Learning", "Recommendations"])
+page = st.sidebar.radio("Go to", ["Data Overview", "Data Analysis", "Machine Learning", "Forecasting", "Recommendations"])
 
-# Data Overview page
+# --- Page 1: Data Overview ---
 if page == "Data Overview":
     st.header("Data Overview")
-    
     if data.empty:
-        st.error("No data available. Please check if the data file exists and is properly formatted.")
+        st.error("No data available.")
     else:
         st.write(data.head())
         st.write(f"Dataset shape: {data.shape}")
-        
-        # Basic statistics
         st.subheader("Basic Statistics")
         st.write(data.describe())
-        
-        # Data distributions
         st.subheader("Data Distributions")
         plot_distributions(data)
 
-# Data Analysis page
+# --- Page 2: Data Analysis ---
 elif page == "Data Analysis":
     st.header("Data Analysis")
-    
     if data.empty:
-        st.error("No data available. Please check if the data file exists and is properly formatted.")
+        st.error("No data available.")
     else:
-        # Country selection
-        if 'Country' in data.columns:
-            countries = sorted(data['Country'].unique())
-            selected_countries = st.multiselect("Select countries to analyze", countries, default=countries[:3] if len(countries) >= 3 else countries)
+        countries = sorted(data['Country'].unique())
+        selected_countries = st.multiselect("Select countries", countries, default=countries[:3])
+        
+        if selected_countries:
+            filtered_data = data[data['Country'].isin(selected_countries)]
+            st.subheader("Food Production Over Time")
+            plot_time_series(filtered_data, selected_countries, 'Production')
             
-            if selected_countries:
-                # Filter data
-                filtered_data = data[data['Country'].isin(selected_countries)]
-                
-                # Time series analysis
-                st.subheader("Food Production Over Time")
-                if 'Production' in data.columns:
-                    plot_time_series(filtered_data, selected_countries, 'Production')
-                else:
-                    numeric_cols = filtered_data.select_dtypes(include=[np.number]).columns
-                    if len(numeric_cols) > 0:
-                        selected_metric = st.selectbox("Select metric for time series", numeric_cols)
-                        plot_time_series(filtered_data, selected_countries, selected_metric)
-                    else:
-                        st.error("No numeric columns available for time series analysis")
-                
-                # Comparisons
-                st.subheader("Country Comparisons")
-                plot_comparisons(filtered_data, selected_countries)
-                
-                # Key insights
-                st.subheader("Key Insights")
-                insights = get_key_insights(filtered_data)
-                for insight in insights:
-                    st.write(f"• {insight}")
-            else:
-                st.info("Please select at least one country to analyze")
+            st.subheader("Country Comparisons")
+            plot_comparisons(filtered_data, selected_countries)
+            
+            st.subheader("Key Insights")
+            insights = get_key_insights(filtered_data)
+            for insight in insights:
+                st.write(f"• {insight}")
         else:
-            st.error("Country column not found in the dataset")
+            st.info("Please select at least one country.")
 
-# Machine Learning page
+# --- Page 3: Machine Learning ---
 elif page == "Machine Learning":
     st.header("Machine Learning Models")
-    
+
     if data.empty:
-        st.error("No data available. Please check if the data file exists and is properly formatted.")
+        st.error("No data available.")
     else:
-        # Get numeric columns for features and target
         numeric_cols = data.select_dtypes(include=[np.number]).columns.tolist()
-        
         if len(numeric_cols) > 1:
-            # Feature and target selection
             features = st.multiselect("Select features", numeric_cols, default=numeric_cols[:min(3, len(numeric_cols))])
             target_options = [col for col in numeric_cols if col not in features]
             
             if target_options:
                 target = st.selectbox("Select target variable", target_options)
-                
-                if features and target:
-                    # Model selection
-                    model_type = st.selectbox("Select model type", ["Linear Regression", "Random Forest", "XGBoost"])
-                    
-                    # Train model button
-                    if st.button("Train Model"):
-                        with st.spinner("Training model..."):
-                            model, metrics, _ = train_model(data, features, target, model_type)
-                            
-                            if model:
-                                # Display metrics
-                                st.subheader("Model Performance")
-                                st.write(f"R² Score: {metrics['r2']:.4f}")
-                                st.write(f"MAE: {metrics['mae']:.4f}")
-                                st.write(f"RMSE: {metrics['rmse']:.4f}")
-                                
-                                # Predictions
-                                st.subheader("Predictions vs Actual")
-                                st.info("This would show a visualization of predictions vs actual values")
-                            else:
-                                st.error("Error training model. Please check the console for more information.")
-                else:
-                    st.warning("Please select features and a target variable")
-            else:
-                st.warning("Not enough numeric columns to separate features and target")
-        else:
-            st.error("Not enough numeric columns for training a model")
+                model_type = st.selectbox("Select model type", ["Linear Regression", "Random Forest", "XGBoost"])
 
-# Recommendations page
+                if features and target:
+                    train_button = st.button("Train Model")
+                    if train_button:
+                        progress = st.progress(0)
+                        with st.spinner("Training in progress..."):
+                            model, metrics, pipeline = train_model(data, features, target, model_type, progress_callback=progress.progress)
+                        st.success("Model trained successfully!")
+
+                        st.subheader("Model Performance")
+                        st.write(f"R² Score: {metrics['r2']:.4f}")
+                        st.write(f"MAE: {metrics['mae']:.4f}")
+                        st.write(f"RMSE: {metrics['rmse']:.4f}")
+
+                        # Prediction input form
+                        st.subheader("Make a Prediction")
+                        user_input = {}
+                        for f in features:
+                            default_val = float(data[f].mean()) if f in data.columns else 0.0
+                            user_input[f] = st.number_input(f"Enter value for {f}", value=default_val)
+
+                        if st.button("Predict"):
+                            input_df = pd.DataFrame([user_input])
+                            prediction = predict(pipeline, input_df)
+                            st.success(f"Predicted {target}: {prediction:.2f}")
+                else:
+                    st.warning("Select features and target to proceed.")
+            else:
+                st.warning("Not enough numeric columns available.")
+        else:
+            st.error("Dataset lacks numeric columns.")
+
+# --- Page 4: Forecasting ---
+elif page == "Forecasting":
+    st.header("Forecasting")
+    if data.empty:
+        st.error("No data available. Please check if the dataset loaded correctly.")
+    else:
+        # Use valid Element values from the dataset
+        valid_metrics = sorted(data['Element'].unique())
+        country = st.selectbox("Select Country", sorted(data['Country'].unique()))
+        item = st.selectbox("Select Item", sorted(data['Item'].unique()))
+        metric = st.selectbox("Select Metric", valid_metrics)
+
+        if st.button("Generate Forecast"):
+            with st.spinner("Generating forecast..."):
+                from forecasting import generate_forecast
+                forecast_df = generate_forecast(data, country, item, metric)
+
+                if forecast_df is not None:
+                    st.success("Forecast generated!")
+                    if len(forecast_df['Forecast'].unique()) == 1:
+                        st.warning("Only one historical data point available, resulting in a flat forecast. Consider " \
+                        "using a dataset with multiple years for better results.")
+                    st.write("Forecasted Values:")
+                    st.write(forecast_df.tail())  # Show forecast output
+                    try:
+                        plot_forecast(data, forecast_df, country, item, metric)
+                    except Exception as e:
+                        st.error(f"Error plotting forecast: {e}")
+                        st.info("The forecast was generated but could not be plotted. Check if the historical data " \
+                        "contains the selected metric.")
+                else:
+                    st.error("Forecast generation failed.")
+                    st.info("Possible reasons: Insufficient data points (need at least 1 year), invalid country/item/metric " \
+                    "combination, or missing data. Check the terminal logs for details.")
+
+
+
+# --- Page 5: Recommendations ---
 elif page == "Recommendations":
     st.header("Data-Driven Recommendations")
-    
+
     if data.empty:
-        st.error("No data available. Please check if the data file exists and is properly formatted.")
+        st.error("No data available.")
     else:
-        # Generate recommendations based on data analysis and ML insights
         st.subheader("Food Production Recommendations")
-        st.write("1. Based on the analysis of trends in food consumption patterns, diversifying agricultural production could enhance food security.")
-        st.write("2. Countries with high import dependency ratios could benefit from increasing domestic production of key food items.")
-        st.write("3. Our predictive models suggest focusing on efficient use of agricultural resources to maximize yields and reduce losses.")
-        
+        st.write("1. Diversify agricultural production to enhance food security.")
+        st.write("2. Reduce import dependency through strategic domestic policies.")
+        st.write("3. Focus on resource efficiency to increase yield.")
+
         st.subheader("Food Security Insights")
-        st.write("1. The data indicates potential food security challenges in regions with high import dependency.")
-        st.write("2. To address these challenges, we recommend strengthening regional cooperation and trade networks.")
-        st.write("3. Investing in storage infrastructure can help reduce post-harvest losses and improve overall food availability.")
-        
-        # Additional custom recommendations
+        st.write("1. Import-reliant regions are vulnerable.")
+        st.write("2. Enhance regional cooperation and food reserves.")
+        st.write("3. Improve infrastructure to cut post-harvest losses.")
+
         st.subheader("Sustainability Recommendations")
-        st.write("1. Balance between production and environmental sustainability should be a priority.")
-        st.write("2. Diversification of food sources can increase resilience against climate and market shocks.")
+        st.write("1. Promote eco-friendly farming practices.")
+        st.write("2. Encourage dietary diversity for resilience.")
+        st.write("3. Monitor climate impact on crop yield.")
 
 # Footer
 st.sidebar.markdown("---")
