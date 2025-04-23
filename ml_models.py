@@ -134,7 +134,7 @@ def train_model(df, features, target, model_type='Linear Regression', progress_c
         if progress_callback:
             progress_callback(100)
 
-        return best_pipeline, metrics, {}
+        return best_pipeline, metrics, {'X_test': X_test, 'y_test': y_test, 'y_pred': y_pred}
 
     except Exception as e:
         logging.error(f"Error training model: {e}")
@@ -145,7 +145,12 @@ def train_model(df, features, target, model_type='Linear Regression', progress_c
 
 def predict(model, X):
     try:
-        return model.predict(X)
+        if model is None:
+            raise ValueError("No model provided for prediction")
+        prediction = model.predict(X)
+        if prediction is None or len(prediction) == 0:
+            raise ValueError("Prediction returned empty or None")
+        return prediction[0]  # Return single value for single prediction
     except Exception as e:
         logging.error(f"Error making predictions: {e}")
-        return None
+        raise ValueError(f"Prediction failed: {e}")

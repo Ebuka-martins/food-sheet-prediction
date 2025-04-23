@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import plotly.express as px
 
 from data_loader import load_and_preprocess_data
 from data_analysis import perform_eda, get_key_insights
@@ -86,11 +87,11 @@ elif page == "Machine Learning":
     else:
         numeric_cols = data.select_dtypes(include=[np.number]).columns.tolist()
         if len(numeric_cols) > 1:
-            features = st.multiselect("Select features", numeric_cols, default=numeric_cols[:min(3, len(numeric_cols))])
+            features = st.multiselect("Select features", numeric_cols, default=['Country Code', 'Element Code', 'Item Code'])
             target_options = [col for col in numeric_cols if col not in features]
             
             if target_options:
-                target = st.selectbox("Select target variable", target_options)
+                target = st.selectbox("Select target variable", target_options, index=target_options.index('Value') if 'Value' in target_options else 0)
                 model_type = st.selectbox("Select model type", ["Linear Regression", "Random Forest", "XGBoost"])
 
                 if features and target:
@@ -98,25 +99,66 @@ elif page == "Machine Learning":
                     if train_button:
                         progress = st.progress(0)
                         with st.spinner("Training in progress..."):
-                            model, metrics, pipeline = train_model(data, features, target, model_type, progress_callback=progress.progress)
-                        st.success("Model trained successfully!")
+                            model, metrics, test_data = train_model(data, features, target, model_type, progress_callback=progress.progress)
+                        if model is not None:
+                            st.success("Model trained successfully!")
+                            st.session_state['model'] = model
+                            st.session_state['test_data'] = test_data
+                            st.session_state['features'] = features
+                            st.session_state['target'] = target
 
-                        st.subheader("Model Performance")
-                        st.write(f"R² Score: {metrics['r2']:.4f}")
-                        st.write(f"MAE: {metrics['mae']:.4f}")
-                        st.write(f"RMSE: {metrics['rmse']:.4f}")
+                            st.subheader("Model Performance")
+                            st.write(f"R² Score: {metrics['r2']:.4f}")
+                            st.write(f"MAE: {metrics['mae']:.4f}")
+                            st.write(f"RMSE: {metrics['rmse']:.4f}")
+                        else:
+                            st.error("Model training failed. Check the terminal logs for details.")
 
-                        # Prediction input form
+                    # Prediction input form
+                    if 'model' in st.session_state and st.session_state['model'] is not None:
                         st.subheader("Make a Prediction")
                         user_input = {}
-                        for f in features:
-                            default_val = float(data[f].mean()) if f in data.columns else 0.0
-                            user_input[f] = st.number_input(f"Enter value for {f}", value=default_val)
+                        for f in st.session_state['features']:
+                            if f in ['Country Code', 'Element Code', 'Item Code']:
+                                valid_values = sorted(data[f].unique().astype(str))
+                                user_input[f] = float(st.selectbox(f"Select {f}", valid_values, key=f))
+                            else:
+                                default_val = float(data[f].mean()) if f in data.columns else 0.0
+                                user_input[f] = st.number_input(f"Enter value for {f}", value=default_val, key=f)
 
                         if st.button("Predict"):
-                            input_df = pd.DataFrame([user_input])
-                            prediction = predict(pipeline, input_df)
-                            st.success(f"Predicted {target}: {prediction:.2f}")
+                            try:
+                                input_df = pd.DataFrame([user_input])
+                                prediction = predict(st.session_state['model'], input_df)
+                                st.success(f"Predicted {st.session_state['target']}: {prediction:.2f}")
+
+                                # Plot prediction
+                                st.subheader("Prediction Visualization")
+                                test_data = st.session_state['test_data']
+                                if 'X_test' in test_data and 'y_test' in test_data and 'y_pred' in test_data:
+                                    # Create a DataFrame for plotting
+                                    plot_data = pd.DataFrame({
+                                        'Actual': test_data['y_test'],
+                                        'Predicted': test_data['y_pred']
+                                    }).reset_index(drop=True)
+                                    # Add user prediction
+                                    user_pred_df = pd.DataFrame({'Actual': [None], 'Predicted': [prediction]})
+                                    plot_data = pd.concat([plot_data, user_pred_df], ignore_index=True)
+                                    
+                                    fig = px.scatter(plot_data, x=plot_data.index, y=['Actual', 'Predicted'],
+                                                    labels={'value': st.session_state['target'], 'index': 'Sample'},
+                                                    title=f'Actual vs Predicted {st.session_state['target']} (Last Point: User Prediction)')
+                                    fig.update_traces(marker=dict(size=8), selector=dict(name='Actual'))
+                                    fig.update_traces(marker=dict(size=8, symbol='x'), selector=dict(name='Predicted'))
+                                    fig.add_scatter(x=[len(plot_data)-1], y=[prediction], mode='markers', 
+                                                   marker=dict(size=12, color='red', symbol='star'),
+                                                   name='User Prediction')
+                                    st.plotly_chart(fig, use_container_width=True)
+                                else:
+                                    st.warning("Test data not available for plotting.")
+                            except ValueError as e:
+                                st.error(f"Prediction failed: {e}")
+                                st.info("Ensure input values are valid and match the training data format.")
                 else:
                     st.warning("Select features and target to proceed.")
             else:
@@ -144,22 +186,17 @@ elif page == "Forecasting":
                 if forecast_df is not None:
                     st.success("Forecast generated!")
                     if len(forecast_df['Forecast'].unique()) == 1:
-                        st.warning("Only one historical data point available, resulting in a flat forecast. Consider " \
-                        "using a dataset with multiple years for better results.")
+                        st.warning("Only one historical data point available, resulting in a flat forecast. Consider using a dataset with multiple years for better results.")
                     st.write("Forecasted Values:")
                     st.write(forecast_df.tail())  # Show forecast output
                     try:
                         plot_forecast(data, forecast_df, country, item, metric)
                     except Exception as e:
                         st.error(f"Error plotting forecast: {e}")
-                        st.info("The forecast was generated but could not be plotted. Check if the historical data " \
-                        "contains the selected metric.")
+                        st.info("The forecast was generated but could not be plotted. Check if the historical data contains the selected metric.")
                 else:
                     st.error("Forecast generation failed.")
-                    st.info("Possible reasons: Insufficient data points (need at least 1 year), invalid country/item/metric " \
-                    "combination, or missing data. Check the terminal logs for details.")
-
-
+                    st.info("Possible reasons: Insufficient data points (need at least 1 year), invalid country/item/metric combination, or missing data. Check the terminal logs for details.")
 
 # --- Page 5: Recommendations ---
 elif page == "Recommendations":
