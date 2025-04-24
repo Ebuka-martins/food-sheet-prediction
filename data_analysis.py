@@ -4,23 +4,23 @@ import io
 
 def perform_eda(df):
     """
-    Perform exploratory data analysis on the dataset
-    
+    Perform exploratory data analysis on the dataset.
+
     Parameters:
     -----------
     df : pd.DataFrame
         Input dataframe
-        
+
     Returns:
     --------
     dict
         Dictionary containing EDA results
     """
-    results = {}
-    
-    results['row_count'] = len(df)
-    results['column_count'] = len(df.columns)
-    results['missing_values'] = df.isna().sum().to_dict()
+    results = {
+        'row_count': len(df),
+        'column_count': len(df.columns),
+        'missing_values': df.isna().sum().to_dict()
+    }
     
     if 'Country' in df.columns:
         results['unique_countries'] = df['Country'].nunique()
@@ -30,21 +30,24 @@ def perform_eda(df):
         results['unique_items'] = df['Item'].nunique()
         results['items'] = sorted(df['Item'].unique().tolist())
     
+    if 'Element' in df.columns:
+        results['unique_elements'] = df['Element'].nunique()
+        results['elements'] = sorted(df['Element'].unique().tolist())
+    
     if 'Year' in df.columns:
-        results['year_range'] = (df['Year'].min(), df['Year'].max())
+        results['year_range'] = (int(df['Year'].min()), int(df['Year'].max())) if not df['Year'].isna().all() else (None, None)
     
     return results
 
-
 def get_key_insights(df):
     """
-    Generate key insights from the dataset
-    
+    Generate key insights from the dataset, compatible with app.py.
+
     Parameters:
     -----------
     df : pd.DataFrame
         Input dataframe
-        
+
     Returns:
     --------
     list
@@ -52,100 +55,156 @@ def get_key_insights(df):
     """
     insights = []
     
-    if all(col in df.columns for col in ['Country', 'Production']):
-        top_producers = df.groupby('Country')['Production'].sum().sort_values(ascending=False)
+    
+    if 'Country' in df.columns and ('Production' in df.columns or 'Value' in df.columns):
+        value_col = 'Production' if 'Production' in df.columns else 'Value'
+        top_producers = df.groupby('Country')[value_col].sum().sort_values(ascending=False)
         if not top_producers.empty:
-            insights.append(f"Top producing country is {top_producers.index[0]} with {top_producers.iloc[0]:,.0f} units")
+            insights.append(f"Top producing country: {top_producers.index[0]} ({top_producers.iloc[0]:,.0f} units)")
     
-    if all(col in df.columns for col in ['Year', 'Production']):
-        yearly_production = df.groupby('Year')['Production'].sum()
-        if len(yearly_production) > 1:
-            first_year = yearly_production.index.min()
-            last_year = yearly_production.index.max()
-            change = yearly_production.iloc[-1] - yearly_production.iloc[0]
-            pct_change = (change / yearly_production.iloc[0]) * 100 if yearly_production.iloc[0] != 0 else float('inf')
-            
-            if pct_change > 0:
-                insights.append(f"Production increased by {pct_change:.1f}% from {first_year} to {last_year}")
-            else:
-                insights.append(f"Production decreased by {abs(pct_change):.1f}% from {first_year} to {last_year}")
     
-    if all(col in df.columns for col in ['Country', 'Import Quantity', 'Export Quantity']):
-        df['Net_Trade'] = df['Export Quantity'] - df['Import Quantity']
-        net_trade = df.groupby('Country')['Net_Trade'].sum().sort_values()
-        
-        if not net_trade.empty and len(net_trade) >= 2:
-            insights.append(f"Largest net importer: {net_trade.index[0]}")
-            insights.append(f"Largest net exporter: {net_trade.index[-1]}")
+    if 'Year' in df.columns and ('Production' in df.columns or 'Value' in df.columns):
+        value_col = 'Production' if 'Production' in df.columns else 'Value'
+        yearly_values = df.groupby('Year')[value_col].sum()
+        if len(yearly_values) > 1:
+            first_year = yearly_values.index.min()
+            last_year = yearly_values.index.max()
+            change = yearly_values.iloc[-1] - yearly_values.iloc[0]
+            pct_change = (change / yearly_values.iloc[0]) * 100 if yearly_values.iloc[0] != 0 else float('inf')
+            trend = "increased" if change > 0 else "decreased"
+            insights.append(f"Total {value_col.lower()} {trend} by {abs(pct_change):.1f}% from {first_year} to {last_year}")
     
-    if 'Item' in df.columns and 'Production' in df.columns:
-        top_items = df.groupby('Item')['Production'].sum().sort_values(ascending=False)
+    
+    if 'Item' in df.columns and ('Production' in df.columns or 'Value' in df.columns):
+        value_col = 'Production' if 'Production' in df.columns else 'Value'
+        top_items = df.groupby('Item')[value_col].sum().sort_values(ascending=False)
         if not top_items.empty:
             insights.append(f"Most produced item: {top_items.index[0]} ({top_items.iloc[0]:,.0f} units)")
     
+    
+    if 'Element' in df.columns and ('Production' in df.columns or 'Value' in df.columns):
+        value_col = 'Production' if 'Production' in df.columns else 'Value'
+        top_elements = df.groupby('Element')[value_col].sum().sort_values(ascending=False)
+        if not top_elements.empty:
+            insights.append(f"Top element: {top_elements.index[0]} ({top_elements.iloc[0]:,.0f} units)")
+    
     if not insights:
-        insights.append("Analyze the data further to discover more specific patterns")
+        insights.append("No insights generated. Ensure the dataset contains columns like Country, Year, Item, Element, and Production/Value.")
     
     return insights
 
-
-def calculate_food_security_metrics(df):
+def calculate_element_year_statistics(df):
     """
-    Calculate food security metrics
-    
+    Calculate sum, mean, and std for numerical columns grouped by Element and Year.
+
     Parameters:
     -----------
     df : pd.DataFrame
         Input dataframe
-        
+
     Returns:
     --------
     pd.DataFrame
-        Dataframe with food security metrics
+        DataFrame with columns Element, Year, sum, mean, std
     """
-    if not all(col in df.columns for col in ['Country', 'Production', 'Import Quantity', 'Export Quantity']):
-        return pd.DataFrame()
     
-    result_df = df.copy()
-    
-    if 'Food' in result_df.columns:
-        result_df['Food_Availability'] = result_df['Production'] + result_df['Import Quantity'] - result_df['Export Quantity']
-        result_df['Self_Sufficiency_Ratio'] = result_df['Production'] / result_df['Food']
-        result_df['Import_Dependency_Ratio'] = result_df['Import Quantity'] / result_df['Food']
-        
-        for col in ['Self_Sufficiency_Ratio', 'Import_Dependency_Ratio']:
-            result_df[col] = result_df[col].replace([np.inf, -np.inf], np.nan)
-    
-    if 'Country' in result_df.columns:
-        metrics = ['Food_Availability', 'Self_Sufficiency_Ratio', 'Import_Dependency_Ratio']
-        available_metrics = [m for m in metrics if m in result_df.columns]
-        
-        if available_metrics:
-            country_metrics = result_df.groupby('Country')[available_metrics].mean().reset_index()
-            return country_metrics
-    
-    return pd.DataFrame()
+    if not all(col in df.columns for col in ['Element', 'Year']):
+        return pd.DataFrame(columns=['Element', 'Year', 'sum', 'mean', 'std'])
 
+    
+    numerical_cols = df.select_dtypes(include=[np.number]).columns
+    numerical_cols = [col for col in numerical_cols if col not in ['Year', 'Country Code', 'Element Code', 'Item Code']]
+
+    if not numerical_cols:
+        return pd.DataFrame(columns=['Element', 'Year', 'sum', 'mean', 'std'])
+
+    
+    result = []
+
+    grouped = df.groupby(['Element', 'Year'])
+
+    for (element, year), group in grouped:
+        values = group[numerical_cols].stack().dropna()
+        
+        
+        total_sum = values.sum() if not values.empty else np.nan
+        total_mean = values.mean() if not values.empty else np.nan
+        total_std = values.std() if not values.empty else np.nan
+
+        result.append({
+            'Element': element,
+            'Year': year,
+            'sum': total_sum,
+            'mean': total_mean,
+            'std': total_std
+        })
+
+    
+    result_df = pd.DataFrame(result)
+    return result_df[['Element', 'Year', 'sum', 'mean', 'std']]
 
 def get_summary_statistics(df):
     """
-    Generate summary statistics including df.describe() and df.info()
-    
+    Generate comprehensive summary statistics, including element-year stats.
+
     Parameters:
     -----------
     df : pd.DataFrame
         Input dataframe
-        
+
     Returns:
     --------
     dict
-        Dictionary with 'describe' and 'info' summaries
+        Dictionary containing describe, info, and element-year statistics
     """
+    
     buffer = io.StringIO()
     df.info(buf=buffer)
     info_str = buffer.getvalue()
+
     
-    return {
+    summary = {
         'describe': df.describe(include='all').to_dict(),
-        'info': info_str
+        'info': info_str,
+        'element_year_stats': calculate_element_year_statistics(df).to_dict(orient='records')
     }
+
+    return summary
+
+def prepare_country_comparison_data(df, countries):
+    """
+    Prepare data for country comparison chart by pivoting Element and Value.
+
+    Parameters:
+    -----------
+    df : pd.DataFrame
+        Input dataframe (filtered by countries)
+    countries : list
+        List of selected countries
+
+    Returns:
+    --------
+    pd.DataFrame
+        DataFrame with columns Country and metrics (e.g., Production, Import Quantity)
+    """
+    if not {'Country', 'Element', 'Value'}.issubset(df.columns) or not (df['Country'].isin(countries)).any():
+        return pd.DataFrame(columns=['Country', 'Production', 'Import Quantity', 'Export Quantity'])
+
+    
+    df_filtered = df[df['Country'].isin(countries)][['Country', 'Element', 'Value']].copy()
+
+    
+    comparison_data = df_filtered.pivot_table(
+        index='Country',
+        columns='Element',
+        values='Value',
+        aggfunc='sum',
+        fill_value=0
+    ).reset_index()
+
+    
+    expected_metrics = ['Production', 'Import Quantity', 'Export Quantity', 'Food', 'Feed', 'Losses']
+    if not any(metric in comparison_data.columns for metric in expected_metrics):
+        return pd.DataFrame(columns=['Country'] + expected_metrics[:3])
+
+    return comparison_data

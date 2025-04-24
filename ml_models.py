@@ -150,7 +150,7 @@ def predict(model, X):
         prediction = model.predict(X)
         if prediction is None or len(prediction) == 0:
             raise ValueError("Prediction returned empty or None")
-        return prediction[0]  # Return single value for single prediction
+        return prediction[0]  
     except Exception as e:
         logging.error(f"Error making predictions: {e}")
         raise ValueError(f"Prediction failed: {e}")

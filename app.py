@@ -6,7 +6,7 @@ import seaborn as sns
 import plotly.express as px
 
 from data_loader import load_and_preprocess_data
-from data_analysis import perform_eda, get_key_insights
+from data_analysis import perform_eda, get_key_insights, calculate_element_year_statistics, prepare_country_comparison_data
 from ml_models import train_model, predict
 from visualizations import (
     plot_distributions,
@@ -69,12 +69,27 @@ elif page == "Data Analysis":
             plot_time_series(filtered_data, selected_countries, 'Production')
             
             st.subheader("Country Comparisons")
-            plot_comparisons(filtered_data, selected_countries)
+            comparison_data = prepare_country_comparison_data(filtered_data, selected_countries)
+            if not comparison_data.empty:
+                plot_comparisons(comparison_data, selected_countries)
+            else:
+                st.warning("No comparison data available. Ensure the dataset contains 'Country', 'Element', and 'Value' or 'Production' columns.")
             
             st.subheader("Key Insights")
             insights = get_key_insights(filtered_data)
             for insight in insights:
                 st.write(f"• {insight}")
+            
+            st.subheader("Element-Year Statistics")
+            element_year_stats = calculate_element_year_statistics(filtered_data)
+            if not element_year_stats.empty:
+                st.dataframe(element_year_stats.style.format({
+                    'sum': '{:,.2f}',
+                    'mean': '{:,.2f}',
+                    'std': '{:,.2f}'
+                }))
+            else:
+                st.warning("No element-year statistics available. Ensure the dataset contains 'Element', 'Year', and numerical columns like 'Production' or 'Value'.")
         else:
             st.info("Please select at least one country.")
 
@@ -172,7 +187,6 @@ elif page == "Forecasting":
     if data.empty:
         st.error("No data available. Please check if the dataset loaded correctly.")
     else:
-        # Use valid Element values from the dataset
         valid_metrics = sorted(data['Element'].unique())
         country = st.selectbox("Select Country", sorted(data['Country'].unique()))
         item = st.selectbox("Select Item", sorted(data['Item'].unique()))
@@ -188,7 +202,7 @@ elif page == "Forecasting":
                     if len(forecast_df['Forecast'].unique()) == 1:
                         st.warning("Only one historical data point available, resulting in a flat forecast. Consider using a dataset with multiple years for better results.")
                     st.write("Forecasted Values:")
-                    st.write(forecast_df.tail())  # Show forecast output
+                    st.write(forecast_df.tail())  
                     try:
                         plot_forecast(data, forecast_df, country, item, metric)
                     except Exception as e:
