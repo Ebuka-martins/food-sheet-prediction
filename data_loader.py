@@ -2,92 +2,204 @@ import pandas as pd
 import numpy as np
 import os
 import logging
+from typing import Optional, Dict, Any
 
+# Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-def load_and_preprocess_data(file_path="data/input/FAOSTAT_data_10-23-2018.csv", encoding='utf-8', dtype=None):
+# Country configuration
+EUROPEAN_COUNTRIES = [
+    ["276", "Germany", 82794],
+    ["250", "France", 66836],
+    ["380", "Italy", 60724],
+    ["826", "United Kingdom", 65765],
+    ["724", "Spain", 46704],
+    ["616", "Poland", 38017],
+
+]
+
+def _disaggregate_european_data(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Loads a CSV file and performs preprocessing for FAOSTAT data.
-
+    Internal function to split European aggregate data into individual countries.
+    
     Args:
-        file_path (str): Path to the CSV file.
-        encoding (str): Encoding type used to decode the file.
-        dtype (dict): Dictionary specifying column data types.
-
+        df: DataFrame containing FAOSTAT data with possible 'Europe' records
+        
     Returns:
-        pd.DataFrame: Cleaned DataFrame or None if file is not found.
+        DataFrame with European data disaggregated to country level
+    """
+    try:
+        if 'Europe' not in df['Country'].values:
+            logging.info("No European aggregate data found - skipping disaggregation")
+            return df
+
+        logging.info("Disaggregating European data to country level...")
+        
+        # Prepare country weights
+        countries_df = pd.DataFrame(
+            EUROPEAN_COUNTRIES,
+            columns=['Country Code', 'Country', 'Population']
+        )
+        countries_df['Weight'] = countries_df['Population'] / countries_df['Population'].sum()
+
+        # Process European records
+        europe_rows = df[df['Country'] == 'Europe']
+        non_europe_rows = df[df['Country'] != 'Europe']
+        
+        new_rows = []
+        for _, row in europe_rows.iterrows():
+            element = row['Element']
+            
+            for _, country in countries_df.iterrows():
+                new_row = row.copy()
+                new_row['Country Code'] = country['Country Code']
+                new_row['Country'] = country['Country']
+                
+                if element == "Total Population - Both sexes":
+                    new_row['Value'] = country['Population']
+                else:
+                    new_row['Value'] = row['Value'] * country['Weight']
+                
+                new_rows.append(new_row)
+
+        # Combine results
+        result_df = pd.concat([non_europe_rows, pd.DataFrame(new_rows)])
+        logging.info(f"Disaggregated {len(europe_rows)} European records into {len(new_rows)} country records")
+        
+        return result_df
+
+    except Exception as e:
+        logging.error(f"Error during European data disaggregation: {str(e)}")
+        raise
+
+def load_and_preprocess_data(file_path: str = "data/faostat_2013_2015.csv", 
+                           encoding: str = 'utf-8', 
+                           dtype: Optional[Dict] = None,
+                           disaggregate_europe: bool = True) -> Optional[pd.DataFrame]:
+    """
+    Loads and preprocesses FAOSTAT data, with optional European data disaggregation.
+    
+    Args:
+        file_path: Path to the CSV file
+        encoding: File encoding
+        dtype: Column data types
+        disaggregate_europe: Whether to split European aggregates into countries
+        
+    Returns:
+        Cleaned DataFrame or None if error occurs
     """
     try:
         if not os.path.exists(file_path):
             logging.error(f"File not found at path: {file_path}")
             logging.error(f"Current working directory: {os.getcwd()}")
+            logging.info("Available files in data directory:")
+            data_dir = os.path.dirname(file_path)
+            if os.path.exists(data_dir):
+                for f in os.listdir(data_dir):
+                    logging.info(f" - {f}")
             return None
 
-        
+        # Load data
         df = pd.read_csv(file_path, encoding=encoding, dtype=dtype)
         logging.info(f"Data loaded successfully from '{file_path}' with shape {df.shape}")
 
-        
+        # Log all columns
+        logging.info(f"Dataset columns: {df.columns.tolist()}")
+
+        # Basic cleaning
         df.dropna(how='all', axis=1, inplace=True)  
         df.dropna(how='all', axis=0, inplace=True)  
-        df.columns = df.columns.str.strip()         
+        df.columns = df.columns.str.strip()
 
-        
-        
-        required_columns = ['Country', 'Item', 'Element', 'Year', 'Value']
-        missing_cols = [col for col in required_columns if col not in df.columns]
-        if missing_cols:
-            logging.error(f"Missing required columns: {missing_cols}")
-            return None
+        # Validate required columns
+        required_columns = ['Country', 'Element', 'Year', 'Value']
+        optional_columns = ['Item', 'Country Code', 'Item Code', 'Element Code', 'Year Code']
+        missing_required = [col for col in required_columns if col not in df.columns]
+        if missing_required:
+            logging.error(f"Missing required columns: {missing_required}")
+            rename_map = {
+                'country': 'Country',
+                'element': 'Element',
+                'year': 'Year',
+                'value': 'Value',
+                'item': 'Item',
+                'country_code': 'Country Code',
+                'item_code': 'Item Code',
+                'element_code': 'Element Code',
+                'year_code': 'Year Code'
+            }
+            for old_col, new_col in rename_map.items():
+                if old_col in df.columns and new_col not in df.columns:
+                    df.rename(columns={old_col: new_col}, inplace=True)
+                    logging.info(f"Renamed column '{old_col}' to '{new_col}'")
+            # Re-check required columns
+            missing_required = [col for col in required_columns if col not in df.columns]
+            if missing_required:
+                logging.error(f"Still missing required columns after renaming: {missing_required}")
+                return None
 
-        
-        df['Year'] = pd.to_numeric(df['Year'], errors='coerce').astype('Int64') 
+        # Type conversion
+        if 'Year' in df.columns:
+            df['Year'] = pd.to_numeric(df['Year'], errors='coerce').astype('Int64')
+        if 'Year Code' in df.columns:
+            df['Year Code'] = pd.to_numeric(df['Year Code'], errors='coerce').astype('Int64')
         df['Value'] = pd.to_numeric(df['Value'], errors='coerce')
-        df = df.dropna(subset=['Year', 'Value']) 
+        df = df.dropna(subset=['Year', 'Value'])
 
-        
+        # Deduplication
         df = df.drop_duplicates()
 
-        logging.info(f"Countries: {df['Country'].unique().tolist()}")
-        logging.info(f"Items: {df['Item'].unique().tolist()}")
-        logging.info(f"Elements: {df['Element'].unique().tolist()}")
-        logging.info(f"Years: {df['Year'].unique().tolist()}")
+        # European data disaggregation
+        if disaggregate_europe and 'Country' in df.columns:
+            df = _disaggregate_european_data(df)
+
+        # Log dataset summary
+        logging.info(f"Processed dataset shape: {df.shape}")
+        if 'Country' in df.columns:
+            logging.info(f"Countries: {df['Country'].unique().tolist()[:10]}...")
+        if 'Element' in df.columns:
+            logging.info(f"Elements: {df['Element'].unique().tolist()[:10]}...")
+        if 'Item' in df.columns:
+            logging.info(f"Items: {df['Item'].unique().tolist()[:10]}...")
+        if 'Year' in df.columns:
+            logging.info(f"Years: {sorted(df['Year'].unique().tolist())}")
+        if 'Year Code' in df.columns:
+            logging.info(f"Year Codes: {sorted(df['Year Code'].unique().tolist())}")
 
         return df
-
-    except FileNotFoundError:
-        logging.error(f"File not found at path: {file_path}")
-        logging.error(f"Current working directory: {os.getcwd()}")
-        logging.error("Please ensure the data file exists at the specified location.")
-        return None
 
     except Exception as e:
         logging.exception(f"An error occurred while loading the data: {e}")
         return None
 
-
-def perform_eda(df):
+def perform_eda(df: pd.DataFrame) -> Dict[str, Any]:
     """
-    Perform exploratory data analysis on a DataFrame.
+    Perform exploratory data analysis on the dataset.
     
     Args:
-        df (pd.DataFrame): Input DataFrame
+        df: Input DataFrame
         
     Returns:
-        dict: Dictionary containing EDA results with:
-            - shape: DataFrame dimensions
-            - columns: List of column names
-            - missing_values: Count of missing values per column
-            - data_types: Data types of each column
-            - numeric_stats: Statistics for numeric columns
+        Dictionary containing EDA results
     """
     if df is None or df.empty:
         raise ValueError("Cannot perform EDA on None or empty DataFrame")
         
-    return {
+    eda_results = {
         'shape': df.shape,
         'columns': df.columns.tolist(),
         'missing_values': df.isnull().sum().to_dict(),
         'data_types': df.dtypes.astype(str).to_dict(),
         'numeric_stats': df.describe().to_dict() if df.select_dtypes(include=np.number).shape[1] > 0 else {}
     }
+    
+    if 'Country' in df.columns:
+        eda_results['unique_countries'] = df['Country'].nunique()
+    if 'Element' in df.columns:
+        eda_results['unique_elements'] = df['Element'].nunique()
+    if 'Item' in df.columns:
+        eda_results['unique_items'] = df['Item'].nunique()
+    if 'Year' in df.columns:
+        eda_results['unique_years'] = sorted(df['Year'].unique().tolist())
+    
+    return eda_results

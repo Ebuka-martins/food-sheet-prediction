@@ -30,16 +30,22 @@ provides insights into food production and consumption patterns, and offers
 predictive analytics using machine learning models.
 """)
 
-# Load data
+# Enhanced data loading with disaggregation control
 @st.cache_data
-def load_data():
-    return load_and_preprocess_data()
+def load_data(disaggregate=True):
+    return load_and_preprocess_data(disaggregate_europe=disaggregate)
 
-data = load_data()
-
-# Sidebar navigation
+# Add disaggregation control to sidebar
 st.sidebar.title("Navigation")
 page = st.sidebar.radio("Go to", ["Data Overview", "Data Analysis", "Machine Learning", "Forecasting", "Recommendations"])
+
+# New: European data handling option
+if page in ["Data Overview", "Data Analysis", "Machine Learning", "Forecasting"]:
+    disaggregate = st.sidebar.checkbox("Disaggregate European data", value=True,
+                                      help="Split European aggregates into individual countries")
+
+# Load data with selected disaggregation option
+data = load_data(disaggregate=disaggregate if 'disaggregate' in locals() else True)
 
 # --- Page 1: Data Overview ---
 if page == "Data Overview":
@@ -47,6 +53,13 @@ if page == "Data Overview":
     if data.empty:
         st.error("No data available.")
     else:
+        if disaggregate:
+            st.info("Showing country-level data (European aggregates disaggregated)")
+        else:
+            st.info("Showing original data with European aggregates")
+            
+        st.write("Unique Years in Dataset:", sorted(data['Year'].unique()))
+        st.write("Unique Year Codes in Dataset:", sorted(data['Year Code'].unique()))
         st.write(data.head())
         st.write(f"Dataset shape: {data.shape}")
         st.subheader("Basic Statistics")
@@ -60,38 +73,56 @@ elif page == "Data Analysis":
     if data.empty:
         st.error("No data available.")
     else:
-        countries = sorted(data['Country'].unique())
-        selected_countries = st.multiselect("Select countries", countries, default=countries[:3])
+        # Display dataset columns for debugging
+        st.write("Dataset Columns:", data.columns.tolist())
         
-        if selected_countries:
-            filtered_data = data[data['Country'].isin(selected_countries)]
-            st.subheader("Food Production Over Time")
-            plot_time_series(filtered_data, selected_countries, 'Production')
-            
-            st.subheader("Country Comparisons")
-            comparison_data = prepare_country_comparison_data(filtered_data, selected_countries)
-            if not comparison_data.empty:
-                plot_comparisons(comparison_data, selected_countries)
+        analysis_options = st.radio("Analysis level", ["Countries", "Regions"], horizontal=True)
+        
+        if analysis_options == "Countries":
+            available_options = sorted(data['Country'].unique())
+        else:
+            regions = ['Europe'] + [c for c in data['Country'].unique() if c not in ['Germany', 'France', 'Italy', 'United Kingdom']]
+            available_options = sorted(regions)
+        
+        selected_items = st.multiselect(
+            f"Select {analysis_options.lower()}",
+            available_options,
+            default=available_options[:3]
+        )
+        
+        if selected_items:
+            if analysis_options == "Countries":
+                filtered_data = data[data['Country'].isin(selected_items)]
             else:
-                st.warning("No comparison data available. Ensure the dataset contains 'Country', 'Element', and 'Value' or 'Production' columns.")
+                if 'Europe' in selected_items:
+                    european_countries = ['Germany', 'France', 'Italy', 'United Kingdom']
+                    europe_data = data[data['Country'].isin(european_countries)]
+                    other_data = data[data['Country'].isin([c for c in selected_items if c != 'Europe'])]
+                    filtered_data = pd.concat([europe_data, other_data])
+                else:
+                    filtered_data = data[data['Country'].isin(selected_items)]
+            
+            st.subheader("Food Production Over Time")
+            value_col = 'Production' if 'Production' in filtered_data.columns else 'Value' if 'Value' in filtered_data.columns else None
+            if 'Year' in filtered_data.columns and value_col:
+                plot_time_series(filtered_data, selected_items, value_col)
+            else:
+                st.error("Cannot plot time series: Missing 'Year' or 'Production/Value' columns.")
+            
+            st.subheader(f"{analysis_options} Comparisons")
+            if {'Country', 'Element', 'Value'}.issubset(filtered_data.columns):
+                comparison_data = prepare_country_comparison_data(filtered_data, selected_items)
+                if not comparison_data.empty:
+                    plot_comparisons(comparison_data, selected_items)
+                else:
+                    st.warning("No comparison data available. Ensure dataset contains valid 'Element' values (e.g., 'Production').")
+            else:
+                st.error("Cannot plot comparisons: Missing 'Country', 'Element', or 'Value' columns.")
             
             st.subheader("Key Insights")
             insights = get_key_insights(filtered_data)
             for insight in insights:
                 st.write(f"• {insight}")
-            
-            st.subheader("Element-Year Statistics")
-            element_year_stats = calculate_element_year_statistics(filtered_data)
-            if not element_year_stats.empty:
-                st.dataframe(element_year_stats.style.format({
-                    'sum': '{:,.2f}',
-                    'mean': '{:,.2f}',
-                    'std': '{:,.2f}'
-                }))
-            else:
-                st.warning("No element-year statistics available. Ensure the dataset contains 'Element', 'Year', and numerical columns like 'Production' or 'Value'.")
-        else:
-            st.info("Please select at least one country.")
 
 # --- Page 3: Machine Learning ---
 elif page == "Machine Learning":
@@ -100,86 +131,157 @@ elif page == "Machine Learning":
     if data.empty:
         st.error("No data available.")
     else:
+        # Get numeric columns and handle defaults safely
         numeric_cols = data.select_dtypes(include=[np.number]).columns.tolist()
-        if len(numeric_cols) > 1:
-            features = st.multiselect("Select features", numeric_cols, default=['Country Code', 'Element Code', 'Item Code'])
-            target_options = [col for col in numeric_cols if col not in features]
+        
+        # Define possible default features and filter to only those that exist
+        possible_defaults = ['Country Code', 'Element Code', 'Item Code', 'Value']  # Exclude 'Year'
+        valid_defaults = [col for col in possible_defaults if col in numeric_cols]
+        
+        # Ensure we have defaults
+        if not valid_defaults and len(numeric_cols) >= 2:
+            valid_defaults = [col for col in numeric_cols if col != 'Year'][:2]
+        elif not valid_defaults:
+            valid_defaults = [col for col in numeric_cols if col != 'Year'][:1] if numeric_cols else []
+        
+        features = st.multiselect(
+            "Select features", 
+            numeric_cols, 
+            default=valid_defaults
+        )
+        
+        # Get target options (excluding features)
+        target_options = [col for col in numeric_cols if col not in features]
+        
+        if target_options:
+            # Set default target to 'Year Code' for consistency
+            preferred_target = 'Year Code' if 'Year Code' in target_options else target_options[0]
+            target = st.selectbox(
+                "Select target variable", 
+                target_options,
+                index=target_options.index(preferred_target) if preferred_target in target_options else 0
+            )
             
-            if target_options:
-                target = st.selectbox("Select target variable", target_options, index=target_options.index('Value') if 'Value' in target_options else 0)
-                model_type = st.selectbox("Select model type", ["Linear Regression", "Random Forest", "XGBoost"])
+            model_type = st.selectbox(
+                "Select model type", 
+                ["Linear Regression", "Random Forest Classifier", "Random Forest", "XGBoost"]
+            )
 
-                if features and target:
-                    train_button = st.button("Train Model")
-                    if train_button:
-                        progress = st.progress(0)
-                        with st.spinner("Training in progress..."):
-                            model, metrics, test_data = train_model(data, features, target, model_type, progress_callback=progress.progress)
-                        if model is not None:
-                            st.success("Model trained successfully!")
-                            st.session_state['model'] = model
-                            st.session_state['test_data'] = test_data
-                            st.session_state['features'] = features
-                            st.session_state['target'] = target
+            if features and target:
+                train_button = st.button("Train Model")
+                if train_button:
+                    progress = st.progress(0)
+                    with st.spinner("Training in progress..."):
+                        model, metrics, test_data = train_model(
+                            data, 
+                            features, 
+                            target, 
+                            model_type, 
+                            progress_callback=progress.progress
+                        )
+                    
+                    if model is not None:
+                        st.success("Model trained successfully!")
+                        st.session_state['model'] = model
+                        st.session_state['test_data'] = test_data
+                        st.session_state['features'] = features
+                        st.session_state['target'] = target
 
-                            st.subheader("Model Performance")
+                        st.subheader("Model Performance")
+                        if model_type == "Random Forest Classifier":
+                            st.write(f"Accuracy: {metrics['accuracy']:.4f}")
+                            st.write("Classification Report:")
+                            st.write(metrics['classification_report'])
+                        else:
                             st.write(f"R² Score: {metrics['r2']:.4f}")
                             st.write(f"MAE: {metrics['mae']:.4f}")
                             st.write(f"RMSE: {metrics['rmse']:.4f}")
+                    else:
+                        st.error("Model training failed. Check the terminal logs for details.")
+
+                # Prediction section
+                if 'model' in st.session_state and st.session_state['model'] is not None:
+                    st.subheader("Make a Prediction")
+                    user_input = {}
+                    
+                    for feature in st.session_state['features']:
+                        if feature in ['Country Code', 'Element Code', 'Item Code']:
+                            unique_values = sorted(data[feature].unique().astype(str))
+                            user_input[feature] = float(st.selectbox(
+                                f"Select {feature}", 
+                                unique_values,
+                                index=min(10, len(unique_values)-1)
+                            ))
                         else:
-                            st.error("Model training failed. Check the terminal logs for details.")
-
-                    # Prediction input form
-                    if 'model' in st.session_state and st.session_state['model'] is not None:
-                        st.subheader("Make a Prediction")
-                        user_input = {}
-                        for f in st.session_state['features']:
-                            if f in ['Country Code', 'Element Code', 'Item Code']:
-                                valid_values = sorted(data[f].unique().astype(str))
-                                user_input[f] = float(st.selectbox(f"Select {f}", valid_values, key=f))
+                            default_val = float(data[feature].mean()) if feature in data.columns else 0.0
+                            user_input[feature] = st.number_input(
+                                f"Enter value for {feature}", 
+                                value=default_val,
+                                key=f"pred_{feature}"
+                            )
+                    if st.button("Predict"):
+                        try:
+                            input_df = pd.DataFrame([user_input])
+                            st.write("Input for prediction:", input_df)
+                            prediction = predict(st.session_state['model'], input_df)
+                            
+                            if st.session_state['target'] == 'Year Code':
+                                formatted_pred = f"{int(round(prediction))}"  
                             else:
-                                default_val = float(data[f].mean()) if f in data.columns else 0.0
-                                user_input[f] = st.number_input(f"Enter value for {f}", value=default_val, key=f)
-
-                        if st.button("Predict"):
-                            try:
-                                input_df = pd.DataFrame([user_input])
-                                prediction = predict(st.session_state['model'], input_df)
-                                st.success(f"Predicted {st.session_state['target']}: {prediction:.2f}")
-
-                                # Plot prediction
-                                st.subheader("Prediction Visualization")
-                                test_data = st.session_state['test_data']
-                                if 'X_test' in test_data and 'y_test' in test_data and 'y_pred' in test_data:
-                                    # Create a DataFrame for plotting
-                                    plot_data = pd.DataFrame({
-                                        'Actual': test_data['y_test'],
-                                        'Predicted': test_data['y_pred']
-                                    }).reset_index(drop=True)
-                                    # Add user prediction
-                                    user_pred_df = pd.DataFrame({'Actual': [None], 'Predicted': [prediction]})
-                                    plot_data = pd.concat([plot_data, user_pred_df], ignore_index=True)
-                                    
-                                    fig = px.scatter(plot_data, x=plot_data.index, y=['Actual', 'Predicted'],
-                                                    labels={'value': st.session_state['target'], 'index': 'Sample'},
-                                                    title=f'Actual vs Predicted {st.session_state['target']} (Last Point: User Prediction)')
-                                    fig.update_traces(marker=dict(size=8), selector=dict(name='Actual'))
-                                    fig.update_traces(marker=dict(size=8, symbol='x'), selector=dict(name='Predicted'))
-                                    fig.add_scatter(x=[len(plot_data)-1], y=[prediction], mode='markers', 
-                                                   marker=dict(size=12, color='red', symbol='star'),
-                                                   name='User Prediction')
-                                    st.plotly_chart(fig, use_container_width=True)
-                                else:
-                                    st.warning("Test data not available for plotting.")
-                            except ValueError as e:
-                                st.error(f"Prediction failed: {e}")
-                                st.info("Ensure input values are valid and match the training data format.")
-                else:
-                    st.warning("Select features and target to proceed.")
+                                formatted_pred = f"{prediction:.2f}"
+                            
+                            st.success(f"Predicted {st.session_state['target']}: {formatted_pred}")
+                            # Improved visualization
+                            test_data = st.session_state['test_data']
+                            if 'y_test' in test_data and 'y_pred' in test_data:
+                                plot_df = pd.DataFrame({
+                                    'Type': ['Actual'] * len(test_data['y_test']) + ['Predicted'] * len(test_data['y_pred']),
+                                    'Value': np.concatenate([test_data['y_test'], test_data['y_pred']]),
+                                    'Index': np.concatenate([np.arange(len(test_data['y_test'])), 
+                                                           np.arange(len(test_data['y_pred']))])
+                                })
+                                
+                                user_point = pd.DataFrame({
+                                    'Type': ['Your Prediction'],
+                                    'Value': [prediction],
+                                    'Index': [len(plot_df)]
+                                })
+                                plot_df = pd.concat([plot_df, user_point])
+                                
+                                fig = px.scatter(
+                                    plot_df, 
+                                    x='Index', 
+                                    y='Value', 
+                                    color='Type',
+                                    color_discrete_map={
+                                        'Actual': 'blue',
+                                        'Predicted': 'red',
+                                        'Your Prediction': 'green'
+                                    },
+                                    symbol='Type',
+                                    symbol_map={
+                                        'Actual': 'circle',
+                                        'Predicted': 'x',
+                                        'Your Prediction': 'star'
+                                    },
+                                    title=f'Model Predictions vs Actuals (Your Prediction: {formatted_pred})'
+                                )
+                                
+                                fig.update_traces(marker=dict(size=10))
+                                fig.update_layout(
+                                    xaxis_title='Sample Index',
+                                    yaxis_title=st.session_state['target'],
+                                    showlegend=True
+                                )
+                                st.plotly_chart(fig, use_container_width=True)
+                                
+                        except Exception as e:
+                            st.error(f"Prediction failed: {str(e)}")
+                            st.info("Please ensure all input values are valid numbers")
             else:
-                st.warning("Not enough numeric columns available.")
+                st.warning("Please select at least one feature and target variable.")
         else:
-            st.error("Dataset lacks numeric columns.")
+            st.warning("Not enough suitable columns available for modeling.")
 
 # --- Page 4: Forecasting ---
 elif page == "Forecasting":
