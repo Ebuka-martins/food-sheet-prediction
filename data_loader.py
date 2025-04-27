@@ -15,7 +15,7 @@ EUROPEAN_COUNTRIES = [
     ["826", "United Kingdom", 65765],
     ["724", "Spain", 46704],
     ["616", "Poland", 38017],
-
+    
 ]
 
 def _disaggregate_european_data(df: pd.DataFrame) -> pd.DataFrame:
@@ -72,7 +72,7 @@ def _disaggregate_european_data(df: pd.DataFrame) -> pd.DataFrame:
         logging.error(f"Error during European data disaggregation: {str(e)}")
         raise
 
-def load_and_preprocess_data(file_path: str = "data/faostat_2013_2015.csv", 
+def load_and_preprocess_data(file_path: str = "data/food_balance_sheet_europe.csv", 
                            encoding: str = 'utf-8', 
                            dtype: Optional[Dict] = None,
                            disaggregate_europe: bool = True) -> Optional[pd.DataFrame]:
@@ -89,6 +89,16 @@ def load_and_preprocess_data(file_path: str = "data/faostat_2013_2015.csv",
         Cleaned DataFrame or None if error occurs
     """
     try:
+        # List of fallback files to try if the primary file is missing
+        fallback_files = [
+            "data/food_balance_sheet_europe.csv",
+            "data/FAOSTAT_data_10-23-2018.csv",
+            "data/food_balance_sheet_preprocessed.csv",
+            "data/food_balance_stats.csv"
+        ]
+        
+        # Check if the specified file exists
+        selected_file = file_path
         if not os.path.exists(file_path):
             logging.error(f"File not found at path: {file_path}")
             logging.error(f"Current working directory: {os.getcwd()}")
@@ -97,11 +107,22 @@ def load_and_preprocess_data(file_path: str = "data/faostat_2013_2015.csv",
             if os.path.exists(data_dir):
                 for f in os.listdir(data_dir):
                     logging.info(f" - {f}")
-            return None
+            
+            # Try fallback files
+            for fallback in fallback_files:
+                if os.path.exists(fallback):
+                    logging.info(f"Attempting to load fallback file: {fallback}")
+                    selected_file = fallback
+                    break
+            else:
+                logging.error("No valid CSV files found in data directory")
+                return None
+        else:
+            logging.info(f"Found file: {file_path}")
 
         # Load data
-        df = pd.read_csv(file_path, encoding=encoding, dtype=dtype)
-        logging.info(f"Data loaded successfully from '{file_path}' with shape {df.shape}")
+        df = pd.read_csv(selected_file, encoding=encoding, dtype=dtype)
+        logging.info(f"Data loaded successfully from '{selected_file}' with shape {df.shape}")
 
         # Log all columns
         logging.info(f"Dataset columns: {df.columns.tolist()}")
@@ -116,7 +137,8 @@ def load_and_preprocess_data(file_path: str = "data/faostat_2013_2015.csv",
         optional_columns = ['Item', 'Country Code', 'Item Code', 'Element Code', 'Year Code']
         missing_required = [col for col in required_columns if col not in df.columns]
         if missing_required:
-            logging.error(f"Missing required columns: {missing_required}")
+            logging.warning(f"Missing required columns: {missing_required}")
+            logging.info("Attempting to rename columns to match required format")
             rename_map = {
                 'country': 'Country',
                 'element': 'Element',
@@ -136,6 +158,7 @@ def load_and_preprocess_data(file_path: str = "data/faostat_2013_2015.csv",
             missing_required = [col for col in required_columns if col not in df.columns]
             if missing_required:
                 logging.error(f"Still missing required columns after renaming: {missing_required}")
+                logging.info(f"Available columns after renaming: {df.columns.tolist()}")
                 return None
 
         # Type conversion
@@ -169,7 +192,7 @@ def load_and_preprocess_data(file_path: str = "data/faostat_2013_2015.csv",
         return df
 
     except Exception as e:
-        logging.exception(f"An error occurred while loading the data: {e}")
+        logging.exception(f"An error occurred while loading the data from '{selected_file}': {e}")
         return None
 
 def perform_eda(df: pd.DataFrame) -> Dict[str, Any]:
