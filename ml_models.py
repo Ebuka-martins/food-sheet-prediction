@@ -8,8 +8,8 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LinearRegression, Ridge, Lasso
-from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score, accuracy_score, classification_report
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 try:
     import xgboost as xgb
@@ -46,6 +46,12 @@ def prepare_data_for_modeling(df, features, target, test_size=0.3, random_state=
     X = df[features].copy()
     y = df[target].copy()
 
+    # Check for NaN values
+    if X.isna().any().any():
+        logging.warning(f"Data contains {X.isna().sum().sum()} NaN values in features.")
+    if y.isna().any():
+        raise ValueError(f"Target variable '{target}' contains {y.isna().sum()} NaN values which must be handled.")
+
     # Log unique target values
     logging.info(f"Unique target values ({target}): {y.unique()}")
 
@@ -69,8 +75,7 @@ def prepare_data_for_modeling(df, features, target, test_size=0.3, random_state=
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, 
         test_size=test_size, 
-        random_state=random_state,
-        stratify=y if target == 'Year Code' else None  
+        random_state=random_state
     )
     
     return X_train, X_test, y_train, y_test, preprocessor
@@ -112,14 +117,6 @@ def train_model(df, features, target, model_type='Linear Regression', progress_c
                     'model__min_samples_split': [2, 5]
                 }
             },
-            'Random Forest Classifier': {
-                'model': RandomForestClassifier(random_state=42),
-                'params': {
-                    'model__n_estimators': [50, 100],
-                    'model__max_depth': [None, 5, 10],
-                    'model__min_samples_split': [2, 5]
-                }
-            },
             'XGBoost': {
                 'model': xgb.XGBRegressor(random_state=42) if XGBOOST_AVAILABLE else None,
                 'params': {
@@ -148,7 +145,7 @@ def train_model(df, features, target, model_type='Linear Regression', progress_c
         # Train model
         param_grid = model_config[model_type]['params']
         if param_grid:
-            scoring = 'accuracy' if model_type == 'Random Forest Classifier' else 'neg_mean_squared_error'
+            scoring = 'neg_mean_squared_error'
             grid_search = GridSearchCV(
                 pipeline, 
                 param_grid, 
@@ -168,17 +165,11 @@ def train_model(df, features, target, model_type='Linear Regression', progress_c
 
         # Evaluate model
         y_pred = best_model.predict(X_test)
-        if model_type == 'Random Forest Classifier':
-            metrics = {
-                'accuracy': accuracy_score(y_test, y_pred),
-                'classification_report': classification_report(y_test, y_pred, output_dict=True)
-            }
-        else:
-            metrics = {
-                'r2': r2_score(y_test, y_pred),
-                'mae': mean_absolute_error(y_test, y_pred),
-                'rmse': np.sqrt(mean_squared_error(y_test, y_pred))
-            }
+        metrics = {
+            'r2': r2_score(y_test, y_pred),
+            'mae': mean_absolute_error(y_test, y_pred),
+            'rmse': np.sqrt(mean_squared_error(y_test, y_pred))
+        }
         logging.info(f"Model performance: {metrics}")
         logging.info(f"Unique predicted values: {np.unique(y_pred)}")
 
@@ -195,7 +186,7 @@ def train_model(df, features, target, model_type='Linear Regression', progress_c
         logging.error(f"Error in train_model: {str(e)}", exc_info=True)
         if progress_callback:
             progress_callback(0)
-        return None, {'r2': 0, 'mae': 0, 'rmse': 0, 'accuracy': 0}, {}
+        return None, {'r2': 0, 'mae': 0, 'rmse': 0}, {}
 
 def predict(model, X):
     """Make predictions using trained model"""

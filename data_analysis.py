@@ -173,23 +173,42 @@ def prepare_country_comparison_data(df, countries):
     pd.DataFrame
         DataFrame with columns Country and metrics (e.g., Production, Import Quantity)
     """
-    if not {'Country', 'Element', 'Value'}.issubset(df.columns) or not df['Country'].isin(countries).any():
+    # Input validation with helpful error handling
+    if df is None or df.empty:
+        return pd.DataFrame()
+    
+    required_columns = {'Country', 'Element', 'Value'}
+    if not required_columns.issubset(df.columns):
+        missing = required_columns - set(df.columns)
+        print(f"Warning: Missing required columns: {missing}")
         return pd.DataFrame(columns=['Country', 'Production', 'Import Quantity', 'Export Quantity'])
     
+    if not df['Country'].isin(countries).any():
+        print(f"Warning: None of the selected countries {countries} found in data")
+        return pd.DataFrame(columns=['Country', 'Production', 'Import Quantity', 'Export Quantity'])
+    
+    # Filter and process the data
     df_filtered = df[df['Country'].isin(countries)][['Country', 'Element', 'Value']].copy()
     
-    comparison_data = df_filtered.pivot_table(
-        index='Country',
-        columns='Element',
-        values='Value',
-        aggfunc='sum',
-        fill_value=0
-    ).reset_index()
+    # Handle potential aggregation issues gracefully
+    try:
+        comparison_data = df_filtered.pivot_table(
+            index='Country',
+            columns='Element',
+            values='Value',
+            aggfunc='sum',
+            fill_value=0
+        ).reset_index()
+    except Exception as e:
+        print(f"Error in pivot table creation: {str(e)}")
+        return pd.DataFrame(columns=['Country', 'Production', 'Import Quantity', 'Export Quantity'])
     
+    # Add expected columns with zeros if missing
     expected_metrics = ['Production', 'Import Quantity', 'Export Quantity', 'Food', 'Feed', 'Losses']
-
     for metric in expected_metrics:
         if metric not in comparison_data.columns:
             comparison_data[metric] = 0
     
-    return comparison_data[['Country'] + [col for col in expected_metrics if col in comparison_data.columns]]
+    # Return only relevant columns that exist
+    available_metrics = [col for col in expected_metrics if col in comparison_data.columns]
+    return comparison_data[['Country'] + available_metrics]
