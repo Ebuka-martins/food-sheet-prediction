@@ -25,10 +25,44 @@ st.set_page_config(
 # Title and introduction
 st.title("Food Balance Sheet Analysis - Europe")
 st.markdown("""
-This application analyzes food balance sheet data for European countries,
+This application predicts food balance sheet data for European countries,
 provides insights into food production and consumption patterns, and offers
 predictive analytics using machine learning models.
 """)
+
+# Project Summary function
+def page_summary_body():
+    st.write("### Quick Project Summary")
+    st.info(
+        f"**General Information**\n"
+        f"* Food balance sheets provide comprehensive data on food production, trade, and consumption across "
+        f"different countries and regions.\n"
+        f"* The analysis of food balance sheet data enables insights into food security, agricultural productivity, "
+        f"and consumption patterns across European countries.\n"
+        f"* Understanding these patterns is crucial for policymakers, researchers, and agricultural businesses to make "
+        f"informed decisions about resource allocation, trade policies, and food security initiatives.\n"
+        f"* This analytical tool provides a data-driven approach to identify trends, compare countries, and forecast "
+        f"future food production and consumption patterns.\n\n"
+        f"**Project Dataset**\n"
+        f"* The dataset contains food balance sheet data for European countries with information on:\n"
+        f"  - Countries and regions\n"
+        f"  - Food items/categories\n"
+        f"  - Production quantities\n"
+        f"  - Various elements (metrics) tracking food supply chain\n"
+        f"  - Time series data across multiple years")
+    st.write(
+        f"* For more in depth information, you can check out the associated "
+        f"[README](https://github.com/Ebuka-martins/food-sheet-prediction/blob/main/README.md) file.")
+    
+    st.success(
+        f"The project has 3 business requirements:\n"
+        f"* 1 - The client is interested in conducting a comprehensive analysis of food production and consumption patterns "
+        f"across European countries to identify trends and regional differences.\n"
+        f"* 2 - The client wants to predict future food production metrics and identify factors influencing agricultural "
+        f"output in different European regions.\n"
+        f"* 3 - The client seeks data-driven recommendations for enhancing food security, sustainability, and agricultural "
+        f"productivity based on historical patterns."
+        )
 
 # Enhanced data loading with disaggregation control
 @st.cache_data
@@ -50,6 +84,10 @@ data = load_data(disaggregate=disaggregate if 'disaggregate' in locals() else Tr
 # --- Page 1: Data Overview ---
 if page == "Data Overview":
     st.header("Data Overview")
+    
+    # Display project summary at the top of the Data Overview page
+    page_summary_body()
+    
     if data is None or data.empty:
         st.error("No data available. Please check if the dataset file exists in the 'data' directory and has the required columns (Country, Element, Year, Value).")
     else:
