@@ -1,11 +1,41 @@
+# Development and Environment
 core.Microsoft*
 core.mongo*
 core.python*
 env.py
 __pycache__/
 *.py[cod]
+.venv/
+venv/
 node_modules/
 .github/
 cloudinary_python.txt
 kaggle.json
-.venv/
+
+# Data Files
+*.csv
+*.parquet
+*.xlsx
+*.json
+data/
+datasets/
+
+# Jupyter Notebooks
+*.ipynb
+*.ipynb_checkpoints/
+
+# Model Files
+*.pkl
+*.joblib
+models/
+
+# Miscellaneous
+*.zip
+*.gz
+*.tar
+*.png
+*.jpg
+*.jpeg
+*.pdf
+tests/
+docs/
