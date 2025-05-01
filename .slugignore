@@ -1,4 +1,3 @@
-*.csv
 *.parquet
 *.xlsx
 *.json
@@ -6,7 +5,6 @@
 *.ipynb_checkpoints/
 *.pkl
 *.joblib
-data/
 datasets/
 models/
 *.zip
