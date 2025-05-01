@@ -435,8 +435,6 @@ elif page == "Forecasting":
 
                 if forecast_df is not None:
                     st.success("Forecast generated!")
-                    if len(forecast_df['Forecast'].unique()) == 1:
-                        st.warning("Only one historical data point available, resulting in a flat forecast. Consider using a dataset with multiple years for better results.")
                     st.write("Forecasted Values:")
                     st.write(forecast_df.tail())  
                     try:

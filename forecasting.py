@@ -46,9 +46,7 @@ def generate_forecast(df, country, item, metric, forecast_periods=5):
         
         ts = df_filtered.set_index("Year")["Value"]
 
-        if len(ts) < 2:
-            logging.warning(f"Only {len(ts)} data point(s) available. Attempting linear regression.")
-            
+        if len(ts) < 2:     
             X = ts.index.values.reshape(-1, 1)
             y = ts.values
             model = LinearRegression().fit(X, y)
