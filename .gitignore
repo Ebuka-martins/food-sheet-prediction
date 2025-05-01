@@ -12,30 +12,30 @@ node_modules/
 cloudinary_python.txt
 kaggle.json
 
-# Data Files
-*.csv
-*.parquet
-*.xlsx
-*.json
-data/
-datasets/
+# # Data Files
+# *.csv
+# *.parquet
+# *.xlsx
+# *.json
+# data/
+# datasets/
 
-# Jupyter Notebooks
-*.ipynb
-*.ipynb_checkpoints/
+# # Jupyter Notebooks
+# *.ipynb
+# *.ipynb_checkpoints/
 
-# Model Files
-*.pkl
-*.joblib
-models/
+# # Model Files
+# *.pkl
+# *.joblib
+# models/
 
-# Miscellaneous
-*.zip
-*.gz
-*.tar
-*.png
-*.jpg
-*.jpeg
-*.pdf
-tests/
-docs/
+# # Miscellaneous
+# *.zip
+# *.gz
+# *.tar
+# *.png
+# *.jpg
+# *.jpeg
+# *.pdf
+# tests/
+# docs/
