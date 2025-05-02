@@ -137,3 +137,4 @@ AC1: Uses plot_distributions from visualizations.py
 AC2: Integrates with Plotly’s make_subplots for faceted histograms
 AC3: Implements color assignment using px.colors.qualitative.Plotly
 AC4: Updates app.py to call plot_distributions with palette parameter
+
