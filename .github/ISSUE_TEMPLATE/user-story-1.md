@@ -1,7 +1,7 @@
 ---
 name: User Story 1
 about: Analyze Regional Food Production Differences
-title: '' user story
+title: '' 
 labels: ''
 assignees: '' 
 
