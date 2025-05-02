@@ -1,9 +1,9 @@
 ---
 name: User Story 1
 about: Analyze Regional Food Production Differences
-title: ''food-sheet-prediction
+title: ''
 labels: ''
-assignees: Ebuka-martins
+assignees: '' 
 
 ---
 
