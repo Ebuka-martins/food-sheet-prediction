@@ -17,6 +17,3 @@ models/
 __pycache__/
 *.pyc
 tests/
-docs/
-.github/
-*.md
