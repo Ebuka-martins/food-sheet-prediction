@@ -69,7 +69,7 @@ Using Streamlit to create a dashboard that is easy to navigate and intuitive, ut
      * Visual summaries of vulnerabilities, such as bar charts showing import dependency by country or region.
   * Integrates insights across all pages, allowing users to explore data (e.g., on “Data Analysis”) and validate recommendations with visualizations and model outputs.
 
- ![Screenshot of the report field on visualiser page](readme_images\analysis-report.png)
- 
+ ![analysis-page](readme_images\analysis-report.png)
+
 
 
