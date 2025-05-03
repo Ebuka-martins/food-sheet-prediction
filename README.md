@@ -59,6 +59,9 @@ Using Streamlit to create a dashboard that is easy to navigate and intuitive, ut
    * Model performance metrics (R², MAE, RMSE) and feature importance analysis.
    * A prediction interface to input custom feature values and receive predictions, with RMSE 15–20% lower than statistical methods.
    * Visualizations of actual vs. predicted values, highlighting the model’s ability to generalize.
+
+![model-page](readme_images\output-1.png)
+
 ### Business Requirement 3
 The client seeks data-driven recommendations for enhancing food security, sustainability, and agricultural productivity based on historical patterns.
 Using Streamlit to create a dashboard that is easy to navigate and intuitive, utilizing an interactive sidebar:    
@@ -69,7 +72,7 @@ Using Streamlit to create a dashboard that is easy to navigate and intuitive, ut
      * Visual summaries of vulnerabilities, such as bar charts showing import dependency by country or region.
   * Integrates insights across all pages, allowing users to explore data (e.g., on “Data Analysis”) and validate recommendations with visualizations and model outputs.
 
-![analysis-page](readme_images/analysis-report.png)
+![import-page](readme_images\output-64.png)
 
 ## Machine Learning Business Case
 
@@ -93,6 +96,32 @@ Contains several sections providing a comprehensive introduction to the app’s 
 - **Basic Statistics**: Presents summary statistics (e.g., mean, standard deviation, minimum, maximum) for numeric columns, providing insights into the data’s central tendencies and variability.
 - **Data Distributions**: Visualizes the distribution of numeric metrics (e.g., Value, Year Code) through histograms, allowing users to explore data patterns and variability visually.
 
+![analysis-page](readme_images\overview-3.png)
+![analysis-page](readme_images\overview-2.png)
+![analysis-page](readme_images\overview-1.png)
 
+### Page 2 - Hypothesis
 
+Contains several sections outlining the project’s hypotheses and their validations:
+- **Hypothesis Overview**: Presents three hypotheses related to regional differences in food production, predictability of agricultural output, and food security vulnerabilities. Each hypothesis is accompanied by detailed validation insights, using statistical analysis (e.g., ANOVA, correlation) and model performance metrics (e.g., R², RMSE) to confirm findings.
+- **Validation Details**: Provides specific evidence for each hypothesis, including regional production patterns, predictive model accuracy, and food security metrics, with clear indicators (success, info, warning) to highlight key results.
+- **README Link**: Offers a link to the project’s README for in-depth methodologies and findings.
 
+![analysis-page](readme_images\output-8.png)
+
+![analysis-page](readme_images/output3.png)
+
+![analysis-page](readme_images/output.-9png.png)
+
+### Page 3 - Data Analysis
+Contains interactive sections for analyzing food production and consumption patterns:
+
+- **Food Prediction Information**: A brief statement on the client’s interest in predicting food production metrics, with links to the FAO dataset source and the project’s README for further details.
+- **Dataset Technical Details**: An expandable section displaying dataset columns, shape, and memory usage, providing context for the analysis.
+- **Analysis Options**: Allows users to select analysis level (Countries or Regions) and specific items (e.g., countries like Germany, regions like Europe) via radio buttons and a multiselect widget, enabling customized data exploration.
+- **Visualizations and Insights**: Includes:
+   - **Food Production Over Time**: A time series line plot showing production trends for selected items, visualizing historical patterns.
+   - **Comparisons**: Bar charts comparing metrics (e.g., Production, Value) across selected items, highlighting regional differences.
+   - **Key Insights**: Bullet-pointed insights (e.g., coefficient of variation, correlations) derived from the filtered data, summarizing significant findings.
+
+![analysis-page](readme_images/food-sheet-prediction.png)
