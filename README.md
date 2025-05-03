@@ -140,7 +140,4 @@ Contains interactive sections for training and using machine learning models to 
 ![prediction-page](readme_images/prediction-1.png)
 
 
-- **Dataset Link and README**: Links to the Kaggle dataset for reference and the project’s README for detailed model information.
-
-
 ### Page 4 - Forecasting
