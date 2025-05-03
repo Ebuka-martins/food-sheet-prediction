@@ -71,6 +71,28 @@ Using Streamlit to create a dashboard that is easy to navigate and intuitive, ut
 
 ![analysis-page](readme_images/analysis-report.png)
 
+## Machine Learning Business Case
+
+* We aim to develop a machine learning model to predict future agricultural output (e.g., production quantities) for European countries using a food balance sheet dataset provided by the client. This problem falls under supervised learning and involves building a regression model to forecast continuous metrics based on historical data and influencing factors.
+* Our ideal outcome is to provide AgriEurope Solutions with a reliable, faster, and cost-effective tool for predicting agricultural output, enabling data-driven decisions for food security and policy planning.
+  * R² score of 0.85 or above on the test set.
+  * RMSE at least 15% lower than traditional statistical forecasting methods.
+* The model will predict agricultural output for selected countries, items, and metrics, providing the predicted value and feature importance (e.g., previous year output, climate indicators). Users can input custom feature values through the Streamlit app, and the model will generate a prediction report that can be acted upon immediately for policy or resource allocation decisions.
+* The current method relies on manual analysis of food balance sheet data, where analysts spend hours compiling data from disparate sources, performing statistical forecasts, and identifying trends. This process is slow, prone to errors, and lacks scalability, especially for diverse agricultural systems across Northern, Southern, Eastern, and Western Europe.
+* The training data used for the model came from a food balance sheet dataset provided by AgriEurope Solutions and uploaded on Kaggle. This dataset contains approximately 50,000 records of food production, import, export, and supply metrics across over 50 European countries, covering multiple years and food items.
+...
+
+## Dashboard Design - Streamlit app
+
+### Page 1 - Data Overview
+
+Contains several sections providing a comprehensive introduction to the app’s purpose and the underlying dataset:
+
+- **Quick Project Summary**: A concise overview of the project’s reasoning, highlighting the importance of analyzing food balance sheets to understand food security, agricultural productivity, and consumption patterns in Europe. Includes a description of the dataset sourced from Kaggle, detailing its coverage of countries, food items, production quantities, and time series data, along with the three business requirements (analysis, prediction, recommendations) and a link to the README for further details.
+- **Dataset Statistics**: Displays key dataset characteristics, including unique years, unique year codes, dataset shape, and a sample of the first few rows, enabling users to grasp the data’s scope and structure.
+- **Basic Statistics**: Presents summary statistics (e.g., mean, standard deviation, minimum, maximum) for numeric columns, providing insights into the data’s central tendencies and variability.
+- **Data Distributions**: Visualizes the distribution of numeric metrics (e.g., Value, Year Code) through histograms, allowing users to explore data patterns and variability visually.
+
 
 
 
