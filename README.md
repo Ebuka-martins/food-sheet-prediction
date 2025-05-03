@@ -60,7 +60,7 @@ Using Streamlit to create a dashboard that is easy to navigate and intuitive, ut
    * A prediction interface to input custom feature values and receive predictions, with RMSE 15–20% lower than statistical methods.
    * Visualizations of actual vs. predicted values, highlighting the model’s ability to generalize.
 
-![model-page](readme_images\output-1.png)
+![model-page](readme_images/output-1.png)
 
 ### Business Requirement 3
 The client seeks data-driven recommendations for enhancing food security, sustainability, and agricultural productivity based on historical patterns.
@@ -72,7 +72,7 @@ Using Streamlit to create a dashboard that is easy to navigate and intuitive, ut
      * Visual summaries of vulnerabilities, such as bar charts showing import dependency by country or region.
   * Integrates insights across all pages, allowing users to explore data (e.g., on “Data Analysis”) and validate recommendations with visualizations and model outputs.
 
-![import-page](readme_images\output-64.png)
+![import-page](readme_images/output-64.png)
 
 ## Machine Learning Business Case
 
@@ -96,9 +96,9 @@ Contains several sections providing a comprehensive introduction to the app’s 
 - **Basic Statistics**: Presents summary statistics (e.g., mean, standard deviation, minimum, maximum) for numeric columns, providing insights into the data’s central tendencies and variability.
 - **Data Distributions**: Visualizes the distribution of numeric metrics (e.g., Value, Year Code) through histograms, allowing users to explore data patterns and variability visually.
 
-![analysis-page](readme_images\overview-3.png)
-![analysis-page](readme_images\overview-2.png)
-![analysis-page](readme_images\overview-1.png)
+![analysis-page](readme_images/overview-3.png)
+![analysis-page](readme_images/overview-2.png)
+![analysis-page](readme_images/overview-1.png)
 
 ### Page 2 - Hypothesis
 
@@ -107,7 +107,7 @@ Contains several sections outlining the project’s hypotheses and their validat
 - **Validation Details**: Provides specific evidence for each hypothesis, including regional production patterns, predictive model accuracy, and food security metrics, with clear indicators (success, info, warning) to highlight key results.
 - **README Link**: Offers a link to the project’s README for in-depth methodologies and findings.
 
-![analysis-page](readme_images\output-8.png)
+![analysis-page](readme_images/output-8.png)
 
 ![analysis-page](readme_images/output3.png)
 
