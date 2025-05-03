@@ -125,3 +125,22 @@ Contains interactive sections for analyzing food production and consumption patt
    - **Key Insights**: Bullet-pointed insights (e.g., coefficient of variation, correlations) derived from the filtered data, summarizing significant findings.
 
 ![analysis-page](readme_images/food-sheet-prediction.png)
+
+### Page 3 - Machine Learning
+Contains interactive sections for training and using machine learning models to predict food production metrics:
+- **Feature and Model Selection**: An expandable section allowing users to select numeric features (e.g., Year Code, Value) and a target variable (e.g., Year Code) via multiselect and dropdown widgets, and choose a model type (Linear Regression, Random Forest, XGBoost) for training.
+- **Model Training**: A button to train the selected model, displaying a progress bar and performance metrics (R² Score, MAE, RMSE) upon completion, with debug information (e.g., target statistics) available in an expander.
+
+![model-page](readme_images/training-1.png)
+![model-page](readme_images/training-2.png)
+![train-page](readme_images/training-3.png)
+
+- **Prediction Interface**: A section for making predictions by entering feature values through selectboxes (for codes) or number inputs, showing the predicted value and a scatter plot comparing actual, predicted, and user-provided predictions.
+
+![prediction-page](readme_images/prediction-1.png)
+
+
+- **Dataset Link and README**: Links to the Kaggle dataset for reference and the project’s README for detailed model information.
+
+
+### Page 4 - Forecasting
