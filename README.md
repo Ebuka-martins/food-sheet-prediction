@@ -127,14 +127,16 @@ Contains interactive sections for analyzing food production and consumption patt
 
 ![analysis-page](readme_images/food-sheet-prediction.png)
 
-### Page 3 - Machine Learning
+### Page 4 - Machine Learning
 Contains interactive sections for training and using machine learning models to predict food production metrics:
 - **Feature and Model Selection**: An expandable section allowing users to select numeric features (e.g., Year Code, Value) and a target variable (e.g., Year Code) via multiselect and dropdown widgets, and choose a model type (Linear Regression, Random Forest, XGBoost) for training.
 - **Dataset Link and README**: Links to the Kaggle dataset for reference and the project’s README for detailed forecasting methodologies.
 - **Model Training**: A button to train the selected model, displaying a progress bar and performance metrics (R² Score, MAE, RMSE) upon completion, with debug information (e.g., target statistics) available in an expander.
 
 ![model-page](readme_images/training-1.png)
+
 ![model-page](readme_images/training-2.png)
+
 ![train-page](readme_images/training-3.png)
 
 - **Prediction Interface**: A section for making predictions by entering feature values through selectboxes (for codes) or number inputs, showing the predicted value and a scatter plot comparing actual, predicted, and user-provided predictions.
@@ -142,9 +144,24 @@ Contains interactive sections for training and using machine learning models to 
 ![prediction-page](readme_images/prediction-1.png)
 
 
-### Page 4 - Forecasting
+### Page 5 - Forecasting
 Contains interactive sections for generating and visualizing time series forecasts of food production metrics:
 - **Forecast Selection**: Dropdown widgets allowing users to select a country (e.g., Germany), item (e.g., Wheat), and metric (e.g., Production) to generate a forecast.
+![forecasting-page](readme_images/forecasting-1.png)
+
 - **Forecast Generation**: A button to generate the forecast, displaying a table of forecasted values for future years and a plot combining historical and predicted data to visualize trends.
+
+![forecasting-page](readme_images/forecasting-3.png)
+
+![forecasting-page](readme_images/forecasting-2.png)
+
 - **Dataset Link and README**: Links to the Kaggle dataset for reference and the project’s README for detailed forecasting methodologies.
 - **Error Handling**: Provides clear feedback if insufficient data or invalid selections prevent forecast generation, ensuring user-friendly interaction.
+
+### Page 6 - Recommendations
+Contains sections presenting data-driven recommendations to enhance food security, sustainability, and agricultural productivity:
+- **Food Production Recommendations**: Suggests strategies like diversifying agricultural production and improving resource efficiency to boost output and resilience.
+- **Food Security Insights**: Highlights vulnerabilities such as import dependency and recommends regional cooperation and infrastructure improvements.
+- **Sustainability Recommendations**: Promotes eco-friendly farming, dietary diversity, and climate monitoring to ensure long-term agricultural sustainability.
+- **Dataset Link and README**: Links to the Kaggle dataset for reference and the project’s README for detailed methodologies and supporting analyses.
+
