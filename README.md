@@ -227,3 +227,43 @@ Pillow==10.0.1
 - Machine Learning: CSV files for model metrics and predictions.
 - Forecasting: CSV file for forecasted values.
 - Recommendations: Text file for recommendations.
+
+## Bugs and Testing
+### Known Bugs and Issues
+The following issues have been identified and are being addressed:
+1. **Data Loading Failure:**
+ - **Issue:** If the dataset file `(data/dataset.csv)` is missing or has unexpected columns, the app displays an error and halts.
+ - **Workaround:** Ensure the dataset is placed in the data folder with required columns (Country, Item, Element, Year, Value). Check terminal logs for details.
+ - **Status:** Planned fix to add robust file validation in `data_loader.py.`
+ ![Testing-page](readme_images/testing.png)
+
+2. **Forecasting Failure for Sparse Data:** 
+  - **Issue:** Generating forecasts for certain country/item/metric combinations (e.g., items with <1 year of data) results in an error message without a plot.
+  - **Workaround:** Select combinations with sufficient historical data (e.g., major crops in large countries like Germany). Error messages guide users to try alternatives.
+  - **Status:** Investigating enhanced data validation in `forecasting.py.`
+
+3. **Machine Learning Prediction Errors:**   
+   - **Issue:** Invalid numeric inputs in the prediction interface (e.g., negative values for non-negative features) may cause errors.
+   - **Workaround:** Enter valid values based on feature ranges shown in the “Model Configuration Details” expander.
+   - **Status:** Planned input validation for numeric fields.
+
+3. **Heroku Memory Limits:**   
+   - **Issue:** Large datasets or memory-intensive operations (e.g., training XGBoost on many features) may exceed Heroku’s memory limits, causing crashes.
+   - **Workaround:** Use the optimized dataset (~50,000 records) and limit feature selection to 3–5 numeric columns.
+   - **Status:** Monitoring memory usage; considering dataset subsampling options.
+
+### Testing Approach
+ The application has been rigorously tested to ensure reliability and usability:   
+ 1. **Unit Tests:**
+   - Tested functions in data_loader.py, data_analysis.py, ml_models.py, forecasting.py, and visualizations.py for data loading, preprocessing, visualization, model training, forecasting, and file generation.
+   - Example: Verified `load_and_preprocess_data` handles missing files and `generate_forecast` returns valid DataFrames.
+  2. **Test Coverage:**
+   - Achieved ~80% coverage of core functions, focusing on critical paths (data loading, forecasting, ML training).
+   - Ongoing: Adding tests for edge cases in visualization functions.
+  3. **Manual Testing:** 
+   - Tested UI rendering, error messages, and download functionality across browsers (Chrome, Firefox) and devices (desktop, mobile). 
+  ![Heroku-page](readme_images/heroku-2.png)
+  4. **Deployment Testing:**
+   - Deployed on Heroku to verify performance, memory usage, and accessibility.
+  ![Heroku-page](readme_images/heroku.png)
+
