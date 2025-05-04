@@ -66,6 +66,8 @@ Using Streamlit to create a dashboard that is easy to navigate and intuitive, ut
 The client seeks data-driven recommendations for enhancing food security, sustainability, and agricultural productivity based on historical patterns.
 Using Streamlit to create a dashboard that is easy to navigate and intuitive, utilizing an interactive sidebar:    
  
+ ![model-page](readme_images/output-2.png)
+
   * Contains a page “Recommendations” that displays insights derived from data analysis, such as high import dependency (>50% for key food categories) and the negative correlation (r = -0.68) between agricultural diversity and supply volatility. The page offers:
 
      * Policy recommendations, such as diversifying agricultural production and reducing import reliance.
@@ -262,8 +264,109 @@ The following issues have been identified and are being addressed:
    - Ongoing: Adding tests for edge cases in visualization functions.
   3. **Manual Testing:** 
    - Tested UI rendering, error messages, and download functionality across browsers (Chrome, Firefox) and devices (desktop, mobile). 
+
   ![Heroku-page](readme_images/heroku-2.png)
+
   4. **Deployment Testing:**
    - Deployed on Heroku to verify performance, memory usage, and accessibility.
+
   ![Heroku-page](readme_images/heroku.png)
 
+
+## Deployment - Using Github and Heroku
+
+### Cloning the Repository
+
+* On Github navigate to the repository "<https://github.com/Ebuka-martins/food-sheet-prediction?tab=readme-ov-file>"
+* Click "Code" drop down menu - a green button shown right above the file list.
+* Copy the URL of the repository using "HTTPS", "SSH" or "Github CLI".
+* Open Git Bash.
+* Change the current working directory to the location where you want the cloned directory.
+* Type "git clone", and then paste the URL copied earlier.
+* Press enter to create local clone. A clone of the repository will now be created.
+
+* For more details on how to clone the repository in order to create a copy for own use refer to the site:
+[Cloning a Repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository)
+
+### Forking a Repository
+
+* On Github navigate to the repository "<https://github.com/Ebuka-martins/food-sheet-prediction?tab=readme-ov-file>"
+* Click "Fork" located towards top right corner on GitHub page.
+* Select "owner" for the forked repository from the dropdown menu under "owner".
+* It will create forked repo under the same name as original by default. But you can type a name in "Repository name" or add a description in "Description" box.
+* Click on "Create fork". A forked repo is created.
+
+#### Important Information about forking a repository
+
+* Forking allows you to make any changes without affecting original project. You can send the suggestions by submitting a pull request. Then the Project Owner can review the pull request before accepting the suggestions and merging them.
+* When you have fork to a repository, you don't have access to files locally on your device, for getting access you will need to clone the forked repository.
+* For more details on how to fork the repo, in order to for example suggest any changes to the project you can:
+[Forking a Repository](https://docs.github.com/en/get-started/quickstart/fork-a-repo)
+
+### Deploying the app - Heroku
+
+* Set the runtime.txt Python version to a [Heroku-20](https://devcenter.heroku.com/articles/python-support#supported-runtimes) stack currently supported version.
+
+* **Important information for running an older version of python:**
+
+  * If an error occurs when deploying stating that the Python version is not available, it is probably due to the stack used for the application. To fix this, log in to the Heroku command line interface (CLI) and use the following command to set the stack to Heroku-20.
+
+    * heroku stack:set heroku-20 -a your-app-name
+      * In this case the your-app-name is **food-sheet-prediction**
+
+* The app is deployed from Heroku using the following steps:
+  * Create Heroku account.
+  * In the top right, click 'New'.
+  * Click 'Create new app'.
+  * Give your app a name and select your region from drop down.
+  * Click 'Create new app'.
+  * Select 'Deploy' tab at the top.
+  * Select 'Github' from 'Deployment method'.
+  * Type the name given to your project in Github and click 'search'.
+  * Scroll down and select Manual deployment method.
+  * You can also use Auto deployment method to allow the project to update every time you push the code.
+  * You can now click to view the app ready and running.
+  * If the slug size is too large, then add large files not required for the app to run to the .slugignore file.
+
+  #### Important Information about forking a repository - Heorku
+
+* The web application is displayed and deployed using template provided by Code Institute to test the code.
+* For this project I used Manual deployment method to deploy the current state of the branch, every time I pushed the code from Gitpod.
+
+* The App live link: [Link to live Streamlit app](https://food-sheet-prediction-234f962233af.herokuapp.com/)
+
+---  
+
+## Technologies
+
+### Languages
+
+This is a list of technologies I used while building this site:
+***
+- [![Python](https://img.shields.io/badge/Python-darkblue?logo=python&logoColor=BA8E23)](https://www.python.org/) The primary programming language used for data processing and machine learning tasks.
+- Markdown - Creating the readme and adding information to the Jupyter notebooks.
+
+### Platforms
+- [![Vscode](https://img.shields.io/badge/Vscode-blue?logo=vscode&logoColor=FF0000)](https://vscode.io) used as a cloud-based IDE for development.
+- [![GitHub](https://img.shields.io/badge/GitHub-grey?logo=github&logoColor=181717)](https://github.com) used for secure online code storage.
+- [![Heroku](https://img.shields.io/badge/Heroku-purple?logo=heroku&logoColor=A020F0)](https://www.heroku.com/) Used to deploy the project.
+- [![Jupyter Notebooks](https://img.shields.io/badge/jupyter-red?logo=jupyter&logoColor=FF0000)](https://www.jupyter.com/)  For development, experimentation, and visualization of code and results, inside Vscode.
+
+### Resources
+- [![Git](https://img.shields.io/badge/Git-grey?logo=git&logoColor=F05032)](https://git-scm.com) used for version control. (`git add`, `git commit`, `git push`)
+- [![Code Institute](https://img.shields.io/badge/Code-Institute-orange?logo=code-institute&logoColor=orange)](https://codeinstitute.net/global/) Gitpod Template - to generate the workspace for the project.
+- [![Kaggle](https://img.shields.io/badge/Kaggle-blue?logo=kaggle&logoColor=ff0000)](https://kaggle.com/) Dataset hosting site, including the dataset used for this project.
+
+### Libraries
+- streamlit==1.40.2
+- pandas==2.1.1
+- numpy==1.26.1
+- plotly==5.17.0
+- matplotlib==3.8.0
+- seaborn==0.13.2
+- scikit-learn==1.3.1
+- scipy==1.15.2
+- statsmodels==0.14.4
+- altair==5.5.0
+- pydeck==0.9.1
+- Pillow==10.0.1
