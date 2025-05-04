@@ -42,8 +42,8 @@ def page_summary_body():
         f"  - Various elements (metrics) tracking food supply chain\n"
         f"  - Time series data across multiple years")
     st.write(
-        f"* For more in depth information, you can check out the associated "
-        f"[README](https://github.com/Ebuka-martins/food-sheet-prediction/blob/main/README.md) file.")
+        f"* You can explore food balance sheets and related datasets on the "
+        f"[FAO website](https://www.kaggle.com/datasets/cameronappel/food-balance-sheet-europe/code).")
     
     st.success(
         f"The project has 3 business requirements:\n"
@@ -64,9 +64,6 @@ def page_food_prediction_body():
         f"* You can explore food balance sheets and related datasets on the "
         f"[FAO website](https://www.kaggle.com/datasets/cameronappel/food-balance-sheet-europe/code)."
         )
-    st.write(
-        f"* For more in depth information, you can check out the associated "
-        f"[README](https://github.com/Ebuka-martins/food-sheet-prediction/blob/main/README.md) file.")
     st.write("---")
 
 def page_project_hypothesis_body():
@@ -143,8 +140,8 @@ def page_project_hypothesis_body():
     )
     
     st.write(
-        f"* For more in-depth information about the methodologies and detailed findings, you can check out the associated "
-        f"[README](https://github.com/Ebuka-martins/food-sheet-prediction/blob/main/README.md) file.")
+        f"* You can explore food balance sheets and related datasets on the "
+        f"[FAO website](https://www.kaggle.com/datasets/cameronappel/food-balance-sheet-europe/code).")
 
 # Enhanced data loading with disaggregation control
 @st.cache_data
@@ -158,6 +155,9 @@ This application analyzes food balance sheet data for European countries,
 provides insights into food production and consumption patterns, and offers
 predictive analytics using machine learning models.
 """)
+st.write(
+    f"For more in depth information, you can check out the associated "
+    f"[README](https://github.com/Ebuka-martins/food-sheet-prediction/blob/main/README.md) file.")
 
 # Sidebar Navigation
 st.sidebar.title("Navigation")
@@ -165,7 +165,7 @@ page = st.sidebar.radio("Go to", ["Data Overview", "Hypothesis", "Data Analysis"
 
 # New: European data handling option
 if page in ["Data Overview", "Data Analysis", "Machine Learning", "Forecasting"]:
-    disaggregate = st.sidebar.checkbox("Disaggregate European data", value=True,
+    disaggregate = st.sidebar.checkbox("-Dissaggregate European data", value=True,
                                       help="Split European aggregates into individual countries")
 
 # Load data with selected disaggregation option

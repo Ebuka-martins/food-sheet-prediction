@@ -118,6 +118,7 @@ Contains interactive sections for analyzing food production and consumption patt
 
 - **Food Prediction Information**: A brief statement on the client’s interest in predicting food production metrics, with links to the FAO dataset source and the project’s README for further details.
 - **Dataset Technical Details**: An expandable section displaying dataset columns, shape, and memory usage, providing context for the analysis.
+- **Dataset Link and README**: Links to the Kaggle dataset for reference and the project’s README for detailed forecasting methodologies.
 - **Analysis Options**: Allows users to select analysis level (Countries or Regions) and specific items (e.g., countries like Germany, regions like Europe) via radio buttons and a multiselect widget, enabling customized data exploration.
 - **Visualizations and Insights**: Includes:
    - **Food Production Over Time**: A time series line plot showing production trends for selected items, visualizing historical patterns.
@@ -129,6 +130,7 @@ Contains interactive sections for analyzing food production and consumption patt
 ### Page 3 - Machine Learning
 Contains interactive sections for training and using machine learning models to predict food production metrics:
 - **Feature and Model Selection**: An expandable section allowing users to select numeric features (e.g., Year Code, Value) and a target variable (e.g., Year Code) via multiselect and dropdown widgets, and choose a model type (Linear Regression, Random Forest, XGBoost) for training.
+- **Dataset Link and README**: Links to the Kaggle dataset for reference and the project’s README for detailed forecasting methodologies.
 - **Model Training**: A button to train the selected model, displaying a progress bar and performance metrics (R² Score, MAE, RMSE) upon completion, with debug information (e.g., target statistics) available in an expander.
 
 ![model-page](readme_images/training-1.png)
@@ -141,3 +143,8 @@ Contains interactive sections for training and using machine learning models to 
 
 
 ### Page 4 - Forecasting
+Contains interactive sections for generating and visualizing time series forecasts of food production metrics:
+- **Forecast Selection**: Dropdown widgets allowing users to select a country (e.g., Germany), item (e.g., Wheat), and metric (e.g., Production) to generate a forecast.
+- **Forecast Generation**: A button to generate the forecast, displaying a table of forecasted values for future years and a plot combining historical and predicted data to visualize trends.
+- **Dataset Link and README**: Links to the Kaggle dataset for reference and the project’s README for detailed forecasting methodologies.
+- **Error Handling**: Provides clear feedback if insufficient data or invalid selections prevent forecast generation, ensuring user-friendly interaction.
