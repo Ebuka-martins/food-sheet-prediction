@@ -165,3 +165,65 @@ Contains sections presenting data-driven recommendations to enhance food securit
 - **Sustainability Recommendations**: Promotes eco-friendly farming, dietary diversity, and climate monitoring to ensure long-term agricultural sustainability.
 - **Dataset Link and README**: Links to the Kaggle dataset for reference and the project’s README for detailed methodologies and supporting analyses.
 
+
+## Installation
+To run the application locally, follow these steps:
+1. Clone the Repository:
+```
+  git clone https://github.com/Ebuka-martins/food-sheet-prediction.git
+cd food-sheet-prediction
+```
+2. Set Up a Virtual Environment (optional but recommended):
+```
+  python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+3. Install Dependencies:
+```
+  pip install -r requirements.txt
+```
+4. Dependencies
+```
+streamlit==1.40.2
+pandas==2.1.1
+numpy==1.26.1
+plotly==5.17.0
+matplotlib==3.8.0
+seaborn==0.13.2
+scikit-learn==1.3.1
+scipy==1.15.2
+statsmodels==0.14.4
+altair==5.5.0
+pydeck==0.9.1
+Pillow==10.0.1
+
+```
+
+5. Download the Dataset:
+ - Downloaded the dataset fro Kaggle
+ - Place it in the `data` folder as `dataset.csv` (or update the path in `data_loader.py`).
+
+ 6. Run the Application:
+ ```
+  streamlit run app.py
+  The app will open in your default browser at http://localhost:8501.
+```
+
+## Usage
+### 1. Access the App:
+- Locally: Run `streamlit run app.py` and navigate to `http://localhost:8501.`
+- Deployed: Visit the Heroku app URL `https://food-sheet-prediction-234f962233af.herokuapp.com/`.
+### 2. Navigate Pages:
+- Use the sidebar to select pages: Data Overview, Hypothesis, Data Analysis, Machine Learning, Forecasting, or Recommendations.
+- Toggle the “Disaggregate European data” checkbox (where applicable) to view country-level or aggregate data.
+### 3. Interact with Features:
+- **Data Overview:** Explore dataset statistics and distributions.
+- **Hypothesis:** Review validated hypotheses with supporting evidence.
+- **Data Analysis:** Select countries/regions to visualize trends and comparisons.
+- **Machine Learning:** Train models, view metrics, and make predictions.
+- **Forecasting:** Generate forecasts for selected countries, items, and metrics.
+- **Recommendations:** Review actionable insights and download recommendations.
+### 3. Download Outputs:
+- Machine Learning: CSV files for model metrics and predictions.
+- Forecasting: CSV file for forecasted values.
+- Recommendations: Text file for recommendations.
