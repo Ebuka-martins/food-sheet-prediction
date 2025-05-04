@@ -272,6 +272,12 @@ The following issues have been identified and are being addressed:
 
   ![Heroku-page](readme_images/heroku.png)
 
+## User-Story
+
+| ![user-story](readme_images/user-story.png) | ![user-story](readme_images/user-story2.png) |
+|:-------------------------------------------:|:-------------------------------------------:|
+| **Kanban board** | **Kanban Issue** |
+
 
 ## Deployment - Using Github and Heroku
 
@@ -371,3 +377,24 @@ This is a list of technologies I used while building this site:
 - pydeck==0.9.1
 - Pillow==10.0.1
 ---  
+ ## Credits Accolade
+
+ ### Content 
+- my inspiration was gotten from [Code Institute](https://codeinstitute.net/ie/) Developing with Streamlit Machine Learning APP.
+- Heroku for hosting the application: [heroku.com](https://www.heroku.com/)
+- The name of the project "Food Sheet Prediction" was gotten from [Kaggle](https://www.kaggle.com/datasets/cameronappel/food-balance-sheet-europe/code).
+- [![Google Dev Tools](https://img.shields.io/badge/Google-yellow?logo=developer.chrome&logoColor=6C660F)](https://developer.chrome.com/docs/devtools) Dev Tools Used For screenshot.
+- ChatGPT for problem solving out of hours and providing help with function formatting.
+
+---
+
+## Acknowledgements
+
+- I give Special thanks to my wife Precious Chidimma, my brother John Paul and my parents who have been a great support to me all through this project.
+- [Kiree Swewi](https://github.com/Swewi) is my friend and he has been a great support to me throughout this project.
+- [Jubril Akolade](https://github.com/Jubrillionaire) was a great mentor to me throughout this project.
+- [Code Institute](https://codeinstitute.net/) tutors and Slack community members for their support and help.
+
+
+
+
